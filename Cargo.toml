@@ -1,0 +1,15 @@
+[package]
+name = "sfui"
+version = "0.1.0"
+edition = "2021"
+
+
+[dependencies]
+sauron = { path ="../sauron", features = ["with-measure"]}
+log = "0.4"
+console_log = { version = "0.2", features = ["color"] }
+css-colors = "1" # for using lighten, and darken when calculating theme colors
+css-color = "0.1.1" #for parsing hex color into rgb, don't get mix with css-colors with a `s`
+
+[workspace]
+members = ["examples/*"]
