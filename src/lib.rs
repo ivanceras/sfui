@@ -3,5 +3,5 @@
 pub use sauron;
 pub use theme::Theme;
 
-mod button;
+pub mod button;
 mod theme;

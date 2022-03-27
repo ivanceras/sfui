@@ -1,5 +1,6 @@
 use css_color::ParseColorError;
 use css_colors::{percent, rgba, Color, RGBA};
+use sauron::jss;
 
 #[derive(PartialEq, Debug)]
 pub struct Theme {
@@ -73,30 +74,39 @@ impl Theme {
             Pallete::default(),
         ))
     }
+
+    pub fn style(&self) -> String {
+        jss! {
+            body : {
+                background_color: self.background_color.clone(),
+            }
+        }
+    }
+
     // base theme using a bluish base color #029dbb
     #[allow(unused)]
-    fn bondi_blue_on_dark() -> Self {
+    pub fn bondi_blue_on_dark() -> Self {
         let primary = rgba(2, 157, 187, 1.0); // main theme
         let background = rgba(0, 0, 0, 1.0);
         Self::calculate_theme(primary, background, Pallete::default())
     }
 
     #[allow(unused)]
-    fn white_on_dark() -> Self {
+    pub fn white_on_dark() -> Self {
         let primary = rgba(255, 255, 255, 1.0);
         let background = rgba(0, 0, 0, 1.0);
         Self::calculate_theme(primary, background, Pallete::default())
     }
 
     #[allow(unused)]
-    fn green_on_black() -> Self {
+    pub fn green_on_black() -> Self {
         let primary = rgba(0, 255, 0, 1.0);
         let background = rgba(0, 0, 0, 1.0);
         Self::calculate_theme(primary, background, Pallete::default())
     }
 
     #[allow(unused)]
-    fn black_on_white() -> Self {
+    pub fn black_on_white() -> Self {
         Self::calculate_theme(
             rgba(0, 0, 0, 1.0),
             rgba(255, 255, 255, 1.0),
