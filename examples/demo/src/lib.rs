@@ -15,7 +15,10 @@ struct App {
 impl App {
     fn new() -> Self {
         App {
-            button: Button::with_label("Hello").with_options(button::Options::full()),
+            //button: Button::with_label("Hello").with_options(button::Options::full()),
+            button: Button::with_label("Hello")
+                .with_options(button::Options::full())
+                .chipped(),
             theme: Theme::green_on_black(),
         }
     }
@@ -46,6 +49,7 @@ impl Application<Msg> for App {
 
 #[wasm_bindgen(start)]
 pub fn main() {
+    console_log::init_with_level(log::Level::Trace).unwrap();
     let container = sauron::document()
         .query_selector(".container")
         .ok()

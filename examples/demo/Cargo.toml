@@ -8,3 +8,5 @@ crate-type = ["cdylib"]
 
 [dependencies]
 sfui =  { path = "../../" }
+console_log = { version = "0.2", features = ["color"] }
+log = "0.4"

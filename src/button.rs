@@ -9,6 +9,8 @@ use sauron::{
     prelude::*,
     Node,
 };
+use wasm_bindgen_futures::JsFuture;
+use web_sys::HtmlAudioElement;
 use web_sys::MouseEvent;
 
 const COMPONENT_NAME: &str = "sfui-button";
@@ -22,10 +24,13 @@ pub enum Msg {
     HoverOut,
     HighlightEnd,
     Mounted(MountEvent),
+    ClickAudioMounted(web_sys::Node),
 }
 
 #[derive(Debug)]
 pub struct Button<PMSG> {
+    click_audio_src: String,
+    click_audio: Option<HtmlAudioElement>,
     options: Options,
     label: String,
     click: bool,
@@ -89,6 +94,8 @@ where
         let options = Options::regular();
         Button {
             options,
+            click_audio_src: "sounds/click.mp3".to_string(),
+            click_audio: None,
             click: false,
             hover: false,
             label: label.to_string(),
@@ -129,7 +136,7 @@ where
         let width = DEFAULT_CHIPPED_BUTTON_WIDTH;
         let height = DEFAULT_CHIPPED_BUTTON_HEIGHT;
         let (chip_width, chip_height) = (20, 20);
-        let (gap_x, gap_y) = (4, 4);
+        let (gap_x, gap_y) = if self.hover { (8, 8) } else { (4, 4) };
         let top_left = (0, 0);
         let top_right = (width, 0);
         let bottom_left = (0, height);
@@ -204,6 +211,13 @@ where
         match msg {
             Msg::Click(mouse_event) => {
                 self.click = true;
+                if let Some(audio) = &self.click_audio {
+                    let promise = audio.play().expect("must play");
+                    sauron::spawn_local(async move {
+                        JsFuture::from(promise).await.expect("must not error");
+                        log::info!("done playing..")
+                    });
+                }
                 let pmsg_list = self
                     .click_listeners
                     .iter()
@@ -231,6 +245,11 @@ where
                     log::trace!("mounted: {}", vdom_id);
                     self.component_id = Some(vdom_id);
                 }
+                Effects::none()
+            }
+            Msg::ClickAudioMounted(node) => {
+                let audio: HtmlAudioElement = node.unchecked_into();
+                self.click_audio = Some(audio);
                 Effects::none()
             }
         }
@@ -275,6 +294,13 @@ where
                 on_mount(|e| Msg::Mounted(e)),
             ],
             [
+                audio(
+                    [
+                        on_mount(|me| Msg::ClickAudioMounted(me.target_node)),
+                        src(&self.click_audio_src),
+                    ],
+                    [],
+                ),
                 // hover
                 view_if(
                     self.options.has_hover,
@@ -652,6 +678,7 @@ where
             },
 
             ".chipped_wrapper .chipped_button": {
+                color: base.button_text_color.clone(),
                 position: "absolute",
                 background_color: "transparent",
                 border: 0,
