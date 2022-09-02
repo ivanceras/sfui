@@ -4,21 +4,24 @@ use sfui::sauron::prelude::*;
 use sfui::Theme;
 
 enum Msg {
-    ButtonMsg(button::Msg),
+    ButtonChipdMsg(button::Msg),
+    ButtonRegularMsg(button::Msg),
 }
 
 struct App {
-    button: Button<Msg>,
+    button_chipd: Button<Msg>,
+    button_regular: Button<Msg>,
     theme: Theme,
 }
 
 impl App {
     fn new() -> Self {
         App {
-            //button: Button::with_label("Hello").with_options(button::Options::full()),
-            button: Button::with_label("Hello")
+            button_chipd: Button::with_label("I'm chipped")
                 .with_options(button::Options::full())
                 .chipped(),
+            button_regular: Button::with_label("Regular button")
+                .with_options(button::Options::regular()),
             theme: Theme::green_on_black(),
         }
     }
@@ -26,11 +29,13 @@ impl App {
 
 impl Application<Msg> for App {
     fn view(&self) -> Node<Msg> {
-        node! {
-            <div>
-                { self.button.view().map_msg(Msg::ButtonMsg) }
-            </div>
-        }
+        div(
+            [style! {display:"flex"}],
+            [
+                self.button_chipd.view().map_msg(Msg::ButtonChipdMsg),
+                self.button_regular.view().map_msg(Msg::ButtonRegularMsg),
+            ],
+        )
     }
 
     fn style(&self) -> String {
@@ -41,7 +46,8 @@ impl Application<Msg> for App {
 
     fn update(&mut self, msg: Msg) -> Cmd<Self, Msg> {
         match msg {
-            Msg::ButtonMsg(bmsg) => self.button.update(bmsg),
+            Msg::ButtonChipdMsg(bmsg) => self.button_chipd.update(bmsg),
+            Msg::ButtonRegularMsg(bmsg) => self.button_regular.update(bmsg),
         };
         Cmd::none()
     }

@@ -132,6 +132,50 @@ where
         )
     }
 
+    fn view_borders(&self) -> Vec<Node<Msg>> {
+        let class_ns = |class_names| attributes::class_namespaced(COMPONENT_NAME, class_names);
+        vec![
+            view_if(
+                self.options.has_borders,
+                div([class_ns("border border-left")], []),
+            ),
+            view_if(
+                self.options.has_borders,
+                div([class_ns("border border-right")], []),
+            ),
+            view_if(
+                self.options.has_borders,
+                div([class_ns("border border-top")], []),
+            ),
+            view_if(
+                self.options.has_borders,
+                div([class_ns("border border-bottom")], []),
+            ),
+        ]
+    }
+
+    fn view_corners(&self) -> Vec<Node<Msg>> {
+        let class_ns = |class_names| attributes::class_namespaced(COMPONENT_NAME, class_names);
+        vec![
+            view_if(
+                self.options.has_corners,
+                div([class_ns("corner corner__top-left")], []),
+            ),
+            view_if(
+                self.options.has_corners,
+                div([class_ns("corner corner__bottom-left")], []),
+            ),
+            view_if(
+                self.options.has_corners,
+                div([class_ns("corner corner__top-right")], []),
+            ),
+            view_if(
+                self.options.has_corners,
+                div([class_ns("corner corner__bottom-right")], []),
+            ),
+        ]
+    }
+
     fn view_chipped_button(&self) -> Node<Msg> {
         let width = DEFAULT_CHIPPED_BUTTON_WIDTH;
         let height = DEFAULT_CHIPPED_BUTTON_HEIGHT;
@@ -306,40 +350,7 @@ where
                     self.options.has_hover,
                     div([class_ns("hover hover-bottom")], []),
                 ),
-                //borders
-                view_if(
-                    self.options.has_borders,
-                    div([class_ns("border border-left")], []),
-                ),
-                view_if(
-                    self.options.has_borders,
-                    div([class_ns("border border-right")], []),
-                ),
-                view_if(
-                    self.options.has_borders,
-                    div([class_ns("border border-top")], []),
-                ),
-                view_if(
-                    self.options.has_borders,
-                    div([class_ns("border border-bottom")], []),
-                ),
                 // corners
-                view_if(
-                    self.options.has_corners,
-                    div([class_ns("corner corner__top-left")], []),
-                ),
-                view_if(
-                    self.options.has_corners,
-                    div([class_ns("corner corner__bottom-left")], []),
-                ),
-                view_if(
-                    self.options.has_corners,
-                    div([class_ns("corner corner__top-right")], []),
-                ),
-                view_if(
-                    self.options.has_corners,
-                    div([class_ns("corner corner__bottom-right")], []),
-                ),
                 if self.options.chipped {
                     self.view_chipped_button()
                 } else {
@@ -362,6 +373,8 @@ where
                 },
             ],
         )
+        .add_children(self.view_borders())
+        .add_children(self.view_corners())
     }
 }
 
@@ -428,80 +441,12 @@ where
         self
     }
 
-    pub fn style(theme: &crate::Theme) -> String {
+    fn border_style(theme: &crate::Theme) -> String {
+        let border_width = 1; // the width of the border for each side of the button
         let base = &theme.controls;
         let transition_time_ms = 250; //transition time for most effects on the button
-        let hover_transition_time = 100; // the transition of the lower highligh of the button when hovering
-        let highlight_transition = 50; // the transition time for the highlight color of the button when clicked
-        let corner_width = 2; // width of the corner clip of this button
-        let corner_length = 8; // lengths of the corner clip of this button
-        let corner_expand_distance = 6; // distance that clips at the corner expands when the button is hovered
-        let border_width = 1; // the width of the border for each side of the button
 
         jss_ns! {COMPONENT_NAME,
-
-            // the ROOT component style
-            ".": {
-                display: "inline-block",
-                padding: px(1),
-                position: "relative",
-                margin: px([10, 10]),
-            },
-
-            ".hidden" : {
-                visibility: "hidden",
-            },
-
-            // HOVER at the lower  part of the button
-            ".hover": {
-                border_color: base.hover_color.clone(),
-                box_shadow: format!("{} {}", px([0,-2, 4]), base.hover_shadow.clone()),
-                z_index: 4,
-                opacity: 1,
-                position: "absolute",
-                transition: format!("width {}ms ease-in", hover_transition_time),
-                border_style: "solid",
-            },
-
-            ".has_hover.hovered .hover": {
-                width: percent(96),
-            },
-
-            ".has_hover.hovered.chipped .hover": {
-                width: percent(80),
-                transform: format!("skewX({}deg) translate({}, {})", -45, percent(-57), 0),
-                transform_origin: "bottom left",
-            },
-
-            ".hover-bottom": {
-                width: 0,
-                left: percent(50),
-                bottom: px(2),
-                transform: format!("translate({}, {})",percent(-50), 0),
-                border_width: px([4, 0, 0, 0]),
-            },
-
-            ".error .hover": {
-                border_color: theme.pallete.error.to_css(),
-                box_shadow: format!("{} {}",px([0, -2, 4]), theme.pallete.error.to_css()),
-            },
-
-            ".success .hover": {
-                border_color: theme.pallete.success.to_css(),
-                box_shadow: format!("{} {}",px([0, -2, 4]), theme.pallete.success.to_css()),
-            },
-
-            ".info .hover": {
-                border_color: theme.pallete.info.to_css(),
-                box_shadow: format!("{} {}",px([0, -2, 4]), theme.pallete.info.to_css()),
-            },
-
-            ".warning .hover": {
-                border_color: theme.pallete.warning.to_css(),
-                box_shadow: format!("{} {}",px([0, -2, 4]), theme.pallete.warning.to_css()),
-            },
-
-
             // BORDERS these are styled divs wrapping the buttons
             ".border": {
                 border_color: base.border_color.clone(),
@@ -565,7 +510,17 @@ where
                 transform: format!("translate({}, {})", percent(-50), 0),
                 border_width: px([border_width, 0, 0, 0]),
             },
+        }
+    }
 
+    fn corner_style(theme: &crate::Theme) -> String {
+        let base = &theme.controls;
+        let transition_time_ms = 250; //transition time for most effects on the button
+        let corner_width = 2; // width of the corner clip of this button
+        let corner_length = 8; // lengths of the corner clip of this button
+        let corner_expand_distance = 6; // distance that clips at the corner expands when the button is hovered
+
+        jss_ns! {COMPONENT_NAME,
             // CORNERS - the fancy divs which clips the button
             ".corner": {
                 width: px(corner_length),
@@ -618,6 +573,107 @@ where
                 right: px(-corner_width),
                 bottom: px(-corner_width),
                 border_width: px([0, corner_width, corner_width, 0]),
+            },
+
+            // if expand_corners is enabled
+            // the fui_button corners will EXPAND when hovered.
+            //
+            // CSS Notes:
+            // - `.class1.class2 child` means if both class1 and class2 is specified in the
+            // parent, the properties will be applied to this child element
+            //
+            //  - `.class1,.class2 child` means either if either class1 or class2 is specified in the
+            // parent, the properties will be applied to this child element
+            //
+            ".expand_corners.hovered .corner__top-left": {
+                left: px(-corner_expand_distance),
+                top: px(-corner_expand_distance),
+            },
+
+            ".expand_corners.hovered .corner__bottom-left": {
+                left: px(-corner_expand_distance),
+                bottom: px(-corner_expand_distance),
+            },
+
+            ".expand_corners.hovered .corner__top-right": {
+                right: px(-corner_expand_distance),
+                top: px(-corner_expand_distance),
+            },
+
+            ".expand_corners.hovered .corner__bottom-right": {
+                right: px(-corner_expand_distance),
+                bottom: px(-corner_expand_distance),
+            },
+        }
+    }
+
+    pub fn style(theme: &crate::Theme) -> String {
+        let base = &theme.controls;
+        let transition_time_ms = 250; //transition time for most effects on the button
+        let hover_transition_time = 100; // the transition of the lower highligh of the button when hovering
+        let highlight_transition = 50; // the transition time for the highlight color of the button when clicked
+
+        let main = jss_ns! {COMPONENT_NAME,
+
+            // the ROOT component style
+            ".": {
+                display: "inline-block",
+                padding: px(1),
+                position: "relative",
+                margin: px([10, 10]),
+            },
+
+            ".hidden" : {
+                visibility: "hidden",
+            },
+
+            // HOVER at the lower  part of the button
+            ".hover": {
+                border_color: base.hover_color.clone(),
+                box_shadow: format!("{} {}", px([0,-2, 4]), base.hover_shadow.clone()),
+                z_index: 4,
+                opacity: 1,
+                position: "absolute",
+                transition: format!("width {}ms ease-in", hover_transition_time),
+                border_style: "solid",
+            },
+
+            ".has_hover.hovered .hover": {
+                width: percent(96),
+            },
+
+            ".has_hover.hovered.chipped .hover": {
+                width: percent(80),
+                transform: format!("skewX({}deg) translate({}, {})", -45, percent(-57), 0),
+                transform_origin: "bottom left",
+            },
+
+            ".hover-bottom": {
+                width: 0,
+                left: percent(50),
+                bottom: px(2),
+                transform: format!("translate({}, {})",percent(-50), 0),
+                border_width: px([4, 0, 0, 0]),
+            },
+
+            ".error .hover": {
+                border_color: theme.pallete.error.to_css(),
+                box_shadow: format!("{} {}",px([0, -2, 4]), theme.pallete.error.to_css()),
+            },
+
+            ".success .hover": {
+                border_color: theme.pallete.success.to_css(),
+                box_shadow: format!("{} {}",px([0, -2, 4]), theme.pallete.success.to_css()),
+            },
+
+            ".info .hover": {
+                border_color: theme.pallete.info.to_css(),
+                box_shadow: format!("{} {}",px([0, -2, 4]), theme.pallete.info.to_css()),
+            },
+
+            ".warning .hover": {
+                border_color: theme.pallete.warning.to_css(),
+                box_shadow: format!("{} {}",px([0, -2, 4]), theme.pallete.warning.to_css()),
             },
 
             ".button_wrap": {
@@ -677,11 +733,27 @@ where
                 position: "absolute",
             },
 
-            ".chipped_wrapper .chipped_button": {
+            ".chipped_button": {
                 color: base.button_text_color.clone(),
                 position: "absolute",
                 background_color: "transparent",
                 border: 0,
+
+                color: base.button_text_color.clone(),
+                cursor: "pointer",
+                margin: 0,
+                border: "none",
+                z_index: 2,
+                display: "inline-block",
+                padding: px([10, 20]),
+                //outline: "none",
+                //position: "relative",
+                font_size: px(15.75),
+                //background_color: base.content_background_color.clone(),
+                //transition: format!("all {}ms ease-out", transition_time_ms),
+                line_height: 1,
+                user_select: "none",
+                vertical_align: "middle",
             },
 
             ".chipped_polygon": {
@@ -799,36 +871,9 @@ where
                 transform: format!("skewX({}deg)", 45),
             },
 
-            // if expand_corners is enabled
-            // the fui_button corners will EXPAND when hovered.
-            //
-            // CSS Notes:
-            // - `.class1.class2 child` means if both class1 and class2 is specified in the
-            // parent, the properties will be applied to this child element
-            //
-            //  - `.class1,.class2 child` means either if either class1 or class2 is specified in the
-            // parent, the properties will be applied to this child element
-            //
-            ".expand_corners.hovered .corner__top-left": {
-                left: px(-corner_expand_distance),
-                top: px(-corner_expand_distance),
-            },
+        };
 
-            ".expand_corners.hovered .corner__bottom-left": {
-                left: px(-corner_expand_distance),
-                bottom: px(-corner_expand_distance),
-            },
-
-            ".expand_corners.hovered .corner__top-right": {
-                right: px(-corner_expand_distance),
-                top: px(-corner_expand_distance),
-            },
-
-            ".expand_corners.hovered .corner__bottom-right": {
-                right: px(-corner_expand_distance),
-                bottom: px(-corner_expand_distance),
-            },
-        }
+        [main, Self::border_style(theme), Self::corner_style(theme)].join("\n")
     }
 }
 
