@@ -33,7 +33,7 @@ pub enum Msg {
 pub struct Button<PMSG> {
     click_audio_src: String,
     click_audio: Option<HtmlAudioElement>,
-    options: Options,
+    feature: Feature,
     label: String,
     click: bool,
     hover: bool,
@@ -64,7 +64,7 @@ impl Pallete {
 }
 
 #[derive(Debug)]
-pub struct Options {
+pub struct Feature {
     pub hidden: bool,
     /// enable sound
     pub sound: bool,
@@ -94,7 +94,7 @@ where
     PMSG: 'static,
 {
     fn default() -> Self {
-        Button::with_label_and_theme("Button", Theme::default()).with_options(Options::chipped())
+        Button::with_label_and_theme("Button", Theme::default()).with_options(Feature::chipped())
     }
 }
 
@@ -104,7 +104,7 @@ where
 {
     pub fn with_label_and_theme(label: &str, theme: Theme) -> Self {
         Button {
-            options: Options::default(),
+            feature: Feature::default(),
             click_audio_src: "sounds/click.mp3".to_string(),
             click_audio: None,
             click: false,
@@ -123,12 +123,12 @@ where
         button(
             [
                 class_ns("button"),
-                if let Some(ref pallete) = self.options.pallete {
+                if let Some(ref pallete) = self.feature.pallete {
                     class_ns(pallete.class_name())
                 } else {
                     empty_attr()
                 },
-                disabled(self.options.disabled),
+                disabled(self.feature.disabled),
                 if let Some(width) = width {
                     style! {width: px(width)}
                 } else {
@@ -148,19 +148,19 @@ where
         let class_ns = |class_names| attributes::class_namespaced(COMPONENT_NAME, class_names);
         node_list([
             view_if(
-                self.options.has_borders,
+                self.feature.has_borders,
                 div([class_ns("border border-left")], []),
             ),
             view_if(
-                self.options.has_borders,
+                self.feature.has_borders,
                 div([class_ns("border border-right")], []),
             ),
             view_if(
-                self.options.has_borders,
+                self.feature.has_borders,
                 div([class_ns("border border-top")], []),
             ),
             view_if(
-                self.options.has_borders,
+                self.feature.has_borders,
                 div([class_ns("border border-bottom")], []),
             ),
         ])
@@ -170,19 +170,19 @@ where
         let class_ns = |class_names| attributes::class_namespaced(COMPONENT_NAME, class_names);
         node_list([
             view_if(
-                self.options.has_corners,
+                self.feature.has_corners,
                 div([class_ns("corner corner__top-left")], []),
             ),
             view_if(
-                self.options.has_corners,
+                self.feature.has_corners,
                 div([class_ns("corner corner__bottom-left")], []),
             ),
             view_if(
-                self.options.has_corners,
+                self.feature.has_corners,
                 div([class_ns("corner corner__top-right")], []),
             ),
             view_if(
-                self.options.has_corners,
+                self.feature.has_corners,
                 div([class_ns("corner corner__bottom-right")], []),
             ),
         ])
@@ -244,7 +244,7 @@ where
                 button(
                     [
                         class_ns("chipped_button"),
-                        disabled(self.options.disabled),
+                        disabled(self.feature.disabled),
                         style! {width: px(width)},
                         style! {height: px(height)},
                     ],
@@ -288,12 +288,12 @@ where
                         Theme::from_str(primary, background).expect("must be a valid theme");
                 }
                 "look" => match value.as_ref() {
-                    "regular" => self.options = Options::regular(),
-                    "skewed" => self.options = Options::skewed(),
-                    "muted" => self.options = Options::muted(),
-                    "chipped" => self.options = Options::chipped(),
-                    "simple" => self.options = Options::simple(),
-                    "disabled" => self.options = Options::disabled(),
+                    "regular" => self.feature = Feature::regular(),
+                    "skewed" => self.feature = Feature::skewed(),
+                    "muted" => self.feature = Feature::muted(),
+                    "chipped" => self.feature = Feature::chipped(),
+                    "simple" => self.feature = Feature::simple(),
+                    "disabled" => self.feature = Feature::disabled(),
                     _ => (),
                 },
                 _ => log::info!("some other attribute: {}", attribute),
@@ -305,7 +305,7 @@ where
         match msg {
             Msg::Click(mouse_event) => {
                 self.click = true;
-                if self.options.sound {
+                if self.feature.sound {
                     if let Some(audio) = &self.click_audio {
                         let promise = audio.play().expect("must play");
                         sauron::spawn_local(async move {
@@ -363,18 +363,18 @@ where
                 class(COMPONENT_NAME),
                 classes_ns_flag([
                     ("clicked", self.click),
-                    ("click_highlights", self.options.click_highlights),
-                    ("expand_corners", self.options.expand_corners),
-                    ("has_hover", self.options.has_hover),
+                    ("click_highlights", self.feature.click_highlights),
+                    ("expand_corners", self.feature.expand_corners),
+                    ("has_hover", self.feature.has_hover),
                     ("hovered", self.hover),
-                    ("skewed", self.options.skewed),
-                    ("chipped", self.options.chipped),
+                    ("skewed", self.feature.skewed),
+                    ("chipped", self.feature.chipped),
                     // setting this will also disable the div, therefore will not activate the
                     // events on it
-                    ("disabled", self.options.disabled),
-                    ("hidden", self.options.hidden),
+                    ("disabled", self.feature.disabled),
+                    ("hidden", self.feature.hidden),
                 ]),
-                if let Some(ref pallete) = self.options.pallete {
+                if let Some(ref pallete) = self.feature.pallete {
                     class_ns(pallete.class_name())
                 } else {
                     empty_attr()
@@ -399,14 +399,14 @@ where
                 ),
                 // hover
                 view_if(
-                    self.options.has_hover,
+                    self.feature.has_hover,
                     div([class_ns("hover hover-bottom")], []),
                 ),
                 // borders
                 self.view_borders(),
                 // corners
                 self.view_corners(),
-                if self.options.chipped {
+                if self.feature.chipped {
                     self.view_chipped_button()
                 } else {
                     div(
@@ -439,8 +439,8 @@ impl<PMSG> Button<PMSG>
 where
     PMSG: 'static,
 {
-    pub fn with_options(mut self, options: Options) -> Self {
-        self.options = options;
+    pub fn with_options(mut self, feature: Feature) -> Self {
+        self.feature = feature;
         self
     }
 
@@ -455,22 +455,22 @@ where
     }
 
     pub fn error(mut self) -> Self {
-        self.options.pallete = Some(Pallete::Error);
+        self.feature.pallete = Some(Pallete::Error);
         self
     }
 
     pub fn success(mut self) -> Self {
-        self.options.pallete = Some(Pallete::Success);
+        self.feature.pallete = Some(Pallete::Success);
         self
     }
 
     pub fn info(mut self) -> Self {
-        self.options.pallete = Some(Pallete::Info);
+        self.feature.pallete = Some(Pallete::Info);
         self
     }
 
     pub fn warning(mut self) -> Self {
-        self.options.pallete = Some(Pallete::Warning);
+        self.feature.pallete = Some(Pallete::Warning);
         self
     }
 
@@ -919,7 +919,7 @@ where
     }
 }
 
-impl Default for Options {
+impl Default for Feature {
     fn default() -> Self {
         Self {
             sound: true,
@@ -937,10 +937,10 @@ impl Default for Options {
     }
 }
 
-impl Options {
+impl Feature {
     /// has chipped at the bottom right
     pub fn chipped() -> Self {
-        Options {
+        Feature {
             has_borders: false,
             chipped: true,
             ..Default::default()
@@ -951,7 +951,7 @@ impl Options {
     /// don't expand corners
     #[allow(unused)]
     pub fn regular() -> Self {
-        Options::default()
+        Feature::default()
     }
 
     pub fn skewed() -> Self {
@@ -985,7 +985,7 @@ impl Options {
     ///does not interact
     #[allow(unused)]
     pub fn disabled() -> Self {
-        Options {
+        Feature {
             sound: false,
             click_highlights: false,
             skewed: false,
