@@ -1,16 +1,19 @@
 use sfui::button::{self, Button};
+use sfui::frame::{self, Frame};
 use sfui::sauron;
 use sfui::sauron::prelude::*;
 use sfui::Theme;
 
 enum Msg {
     ButtonMsg(button::Msg),
+    FrameMsg(Box<frame::Msg<Msg>>),
     HelloClick,
 }
 
 struct App {
     theme: Theme,
     button: Button<Msg>,
+    frame: Frame<Msg>,
 }
 
 impl App {
@@ -20,7 +23,16 @@ impl App {
         App {
             theme: theme.clone(),
             button: Button::with_label("This is a long label with some other labels")
-                .with_theme(theme),
+                .with_theme(theme.clone()),
+            frame: Frame::with_label("A frame")
+                .with_theme(theme.clone())
+                .with_content(img(
+                    [
+                        src("./assets/moon.jpg"),
+                        style! {display:"block", width: px(500)},
+                    ],
+                    [],
+                )),
         }
     }
 }
@@ -40,11 +52,9 @@ impl Application<Msg> for App {
                 </div>
             }
         };
-
         let features = [
             "chipped", "regular", "skewed", "muted", "disabled", "simple",
         ];
-
         let statuses = ["none", "success", "error", "warning", "info"];
 
         node! {
@@ -65,12 +75,17 @@ impl Application<Msg> for App {
                         }
                     }
                 </div>
+                {self.frame.view().map_msg(|fmsg|Msg::FrameMsg(Box::new(fmsg)))}
+                <sfui-frame
+                    theme-primary=&self.theme.primary_color
+                    theme-background=&self.theme.background_color
+                    />
             </div>
         }
     }
 
     fn style(&self) -> String {
-        [self.theme.style(), self.button.style()].join("\n")
+        [self.theme.style(), self.button.style(), self.frame.style()].join("\n")
     }
 
     fn update(&mut self, msg: Msg) -> Cmd<Self, Msg> {
@@ -83,6 +98,10 @@ impl Application<Msg> for App {
                 let effects = self.button.update(bmsg);
                 Cmd::from(effects.localize(Msg::ButtonMsg))
             }
+            Msg::FrameMsg(fmsg) => {
+                let effects = self.frame.update(*fmsg);
+                Cmd::from(effects.localize(|fmsg| Msg::FrameMsg(Box::new(fmsg))))
+            }
         }
     }
 }
@@ -90,7 +109,7 @@ impl Application<Msg> for App {
 #[wasm_bindgen(start)]
 pub fn main() {
     console_log::init_with_level(log::Level::Trace).unwrap();
-    button::register();
+    sfui::register_all();
     let container = sauron::document()
         .query_selector(".container")
         .ok()

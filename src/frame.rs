@@ -1,4 +1,3 @@
-//use css_colors::Color;
 use crate::Status;
 use crate::Theme;
 use css_colors::Color;
@@ -16,21 +15,22 @@ use wasm_bindgen_futures::JsFuture;
 use web_sys::HtmlAudioElement;
 use web_sys::MouseEvent;
 
-const COMPONENT_NAME: &str = "sfui-button";
+const COMPONENT_NAME: &str = "sfui-frame";
 const DEFAULT_CHIPPED_BUTTON_WIDTH: usize = 100;
 const DEFAULT_CHIPPED_BUTTON_HEIGHT: usize = 40;
 
 #[derive(Clone, Debug)]
-pub enum Msg {
+pub enum Msg<PMSG> {
     Click(MouseEvent),
     HoverIn,
     HoverOut,
     HighlightEnd,
     ClickAudioMounted(web_sys::Node),
+    External(PMSG),
 }
 
 #[derive(Debug)]
-pub struct Button<PMSG> {
+pub struct Frame<PMSG> {
     click_audio_src: String,
     click_audio: Option<HtmlAudioElement>,
     feature: Feature,
@@ -43,55 +43,48 @@ pub struct Button<PMSG> {
     theme: Theme,
     /// the status of the button which changes the color pallet of the button
     status: Option<Status>,
+    content: Option<Node<PMSG>>,
 }
 
 #[derive(Debug)]
 pub struct Feature {
-    pub hidden: bool,
     /// enable sound
     pub sound: bool,
     /// enable click effect, which changes the background color
     /// of the button with the highlight color
     pub click_highlights: bool,
-    /// the button is slanted 45 degree to the right
-    pub skewed: bool,
     /// has corners
     pub has_corners: bool,
-    /// the button has borders
+    /// the frame has borders
     pub has_borders: bool,
-    /// enable/disable hover effect
-    pub has_underline: bool,
     /// expand corners when hovered
     pub expand_corners: bool,
     pub has_corner_box_shadow: bool,
-    /// the button is disabled
-    pub disabled: bool,
-    /// the bottom right of the button is chipped
-    pub chipped: bool,
 }
 
-impl<PMSG> Default for Button<PMSG>
+impl<PMSG> Default for Frame<PMSG>
 where
     PMSG: 'static,
 {
     fn default() -> Self {
         Self {
-            feature: Feature::chipped(),
+            feature: Feature::default(),
             click_audio_src: "sounds/click.mp3".to_string(),
             click_audio: None,
             clicked: false,
             hovered: false,
-            label: "Button".to_string(),
+            label: "Frame".to_string(),
             click_listeners: vec![],
             width: None,
             height: None,
             theme: Theme::default(),
             status: None,
+            content: None,
         }
     }
 }
 
-impl<PMSG> Button<PMSG>
+impl<PMSG> Frame<PMSG>
 where
     PMSG: 'static,
 {
@@ -100,6 +93,11 @@ where
             label: label.to_string(),
             ..Default::default()
         }
+    }
+
+    pub fn with_content(mut self, content: Node<PMSG>) -> Self {
+        self.content = Some(content);
+        self
     }
 
     fn computed_width(&self) -> usize {
@@ -122,7 +120,7 @@ where
         }
     }
 
-    fn view_borders(&self) -> Node<Msg> {
+    fn view_borders(&self) -> Node<Msg<PMSG>> {
         let class_ns = |class_names| attributes::class_namespaced(COMPONENT_NAME, class_names);
         node_list([
             view_if(
@@ -144,7 +142,7 @@ where
         ])
     }
 
-    fn view_corners(&self) -> Node<Msg> {
+    fn view_corners(&self) -> Node<Msg<PMSG>> {
         let class_ns = |class_names| attributes::class_namespaced(COMPONENT_NAME, class_names);
         node_list([
             view_if(
@@ -165,131 +163,10 @@ where
             ),
         ])
     }
-
-    fn view_button(&self) -> Node<Msg> {
-        if self.feature.chipped {
-            self.view_chipped_button()
-        } else {
-            self.view_plain_button()
-        }
-    }
-
-    fn view_plain_button(&self) -> Node<Msg> {
-        let class_ns = |class_names| attributes::class_namespaced(COMPONENT_NAME, class_names);
-        div(
-            [],
-            [
-                div(
-                    [
-                        class_ns("highlight"),
-                        on_transitionend(|_| Msg::HighlightEnd),
-                    ],
-                    [],
-                ),
-                div(
-                    [class_ns("button_wrap")],
-                    [button(
-                        [
-                            class_ns("button"),
-                            if let Some(ref status) = self.status {
-                                class_ns(status.class_name())
-                            } else {
-                                empty_attr()
-                            },
-                            disabled(self.feature.disabled),
-                            if let Some(width) = self.width {
-                                style! {width: px(width)}
-                            } else {
-                                empty_attr()
-                            },
-                            if let Some(height) = self.height {
-                                style! { height: px(height) }
-                            } else {
-                                empty_attr()
-                            },
-                        ],
-                        [text(&self.label)],
-                    )],
-                ),
-            ],
-        )
-    }
-
-    fn view_chipped_button(&self) -> Node<Msg> {
-        let width = self.computed_width();
-        let height = self.computed_height();
-        let (chip_width, chip_height) = (20, 20);
-        let (gap_x, gap_y) = if self.hovered { (8, 8) } else { (4, 4) };
-        let top_left = (0, 0);
-        let top_right = (width, 0);
-        let bottom_left = (0, height);
-        let chip1 = (width - chip_width, height);
-        let chip2 = (width, height - chip_height);
-
-        let poly_points = [bottom_left, chip1, chip2, top_right, top_left];
-
-        let bottom_right = (width, height);
-
-        //     /
-        //    *-
-        let tri_edge1 = (width - chip_width + gap_x, height);
-
-        //      *
-        //     /|
-        let tri_edge2 = (width, height - chip_height + gap_y);
-        let triangle = [tri_edge1, tri_edge2, bottom_right];
-
-        let poly_points_str = poly_points
-            .iter()
-            .map(|p| format!("{},{}", p.0, p.1))
-            .collect::<Vec<_>>()
-            .join(" ");
-
-        let triangle_points = triangle
-            .iter()
-            .map(|p| format!("{},{}", p.0, p.1))
-            .collect::<Vec<_>>()
-            .join(" ");
-
-        let class_ns = |class_names| attributes::class_namespaced(COMPONENT_NAME, class_names);
-        div(
-            [class_ns("chipped_wrapper")],
-            [
-                svg(
-                    [
-                        xmlns("http://www.w3.org/2000/svg"),
-                        preserveAspectRatio("none"),
-                        class_ns("chipped_svg"),
-                        viewBox([0, 0, width, height]),
-                    ],
-                    [
-                        polygon(
-                            [
-                                class_ns("chipped_polygon"),
-                                points(poly_points_str),
-                                on_transitionend(|_| Msg::HighlightEnd),
-                            ],
-                            [],
-                        ),
-                        polygon([class_ns("triangle"), points(triangle_points)], []),
-                    ],
-                ),
-                button(
-                    [
-                        class_ns("chipped_button"),
-                        disabled(self.feature.disabled),
-                        style! {width: px(width)},
-                        style! {height: px(height)},
-                    ],
-                    [text(&self.label)],
-                ),
-            ],
-        )
-    }
 }
 
-#[custom_element("sfui-button")]
-impl<PMSG> Component<Msg, PMSG> for Button<PMSG>
+//#[custom_element("sfui-frame")]
+impl<PMSG> Component<Msg<PMSG>, PMSG> for Frame<PMSG>
 where
     PMSG: 'static,
 {
@@ -322,22 +199,13 @@ where
                     self.theme =
                         Theme::from_str(primary, background).expect("must be a valid theme");
                 }
-                "feature" => match value.as_ref() {
-                    "regular" => self.feature = Feature::regular(),
-                    "skewed" => self.feature = Feature::skewed(),
-                    "muted" => self.feature = Feature::muted(),
-                    "chipped" => self.feature = Feature::chipped(),
-                    "simple" => self.feature = Feature::simple(),
-                    "disabled" => self.feature = Feature::disabled(),
-                    _ => (),
-                },
                 "status" => self.status = Status::from_str(value.as_ref()),
                 _ => log::info!("some other attribute: {}", attribute),
             }
         }
     }
 
-    fn update(&mut self, msg: Msg) -> Effects<Msg, PMSG> {
+    fn update(&mut self, msg: Msg<PMSG>) -> Effects<Msg<PMSG>, PMSG> {
         match msg {
             Msg::Click(mouse_event) => {
                 self.clicked = true;
@@ -373,10 +241,11 @@ where
                 self.click_audio = Some(audio);
                 Effects::none()
             }
+            Msg::External(xmsg) => Effects::with_external([xmsg]),
         }
     }
 
-    fn view(&self) -> Node<Msg> {
+    fn view(&self) -> Node<Msg<PMSG>> {
         let class_ns = |class_names| attributes::class_namespaced(COMPONENT_NAME, class_names);
 
         let classes_ns_flag = |class_name_flags| {
@@ -391,14 +260,7 @@ where
                     ("click_highlights", self.feature.click_highlights),
                     ("expand_corners", self.feature.expand_corners),
                     ("has_corner_box_shadow", self.feature.has_corner_box_shadow),
-                    ("has_underline", self.feature.has_underline),
                     ("hovered", self.hovered),
-                    ("skewed", self.feature.skewed),
-                    ("chipped", self.feature.chipped),
-                    // setting this will also disable the div, therefore will not activate the
-                    // events on it
-                    ("disabled", self.feature.disabled),
-                    ("hidden", self.feature.hidden),
                 ]),
                 if let Some(ref status) = self.status {
                     class_ns(status.class_name())
@@ -422,11 +284,6 @@ where
                     ],
                     [],
                 ),
-                // underline when mouse underline
-                view_if(
-                    self.feature.has_underline,
-                    div([class_ns("underline underline-bottom")], []),
-                ),
                 div(
                     [],
                     [
@@ -434,7 +291,14 @@ where
                         self.view_borders(),
                         // corners
                         self.view_corners(),
-                        div([], [self.view_button()]),
+                        div(
+                            [],
+                            if let Some(content) = &self.content {
+                                vec![content.clone().map_msg(Msg::External)]
+                            } else {
+                                vec![]
+                            },
+                        ),
                     ],
                 ),
             ],
@@ -446,7 +310,7 @@ where
     }
 }
 
-impl<PMSG> Button<PMSG>
+impl<PMSG> Frame<PMSG>
 where
     PMSG: 'static,
 {
@@ -544,9 +408,9 @@ where
     fn corner_style(theme: &Theme) -> String {
         let base = &theme.controls;
         let transition_time_ms = 250; //transition time for most effects on the button
-        let corner_width = 2; // width of the corner clip of this button
-        let corner_length = 8; // lengths of the corner clip of this button
-        let corner_expand_distance = 6; // distance that clips at the corner expands when the button is hovered
+        let corner_width = 4; // width of the corner clip of this button
+        let corner_length = 16; // lengths of the corner clip of this button
+        let corner_expand_distance = 12; // distance that clips at the corner expands when the button is hovered
 
         jss_ns_pretty! {COMPONENT_NAME,
             // CORNERS - the fancy divs which clips the button
@@ -915,76 +779,10 @@ impl Default for Feature {
         Self {
             sound: true,
             click_highlights: true,
-            skewed: false,
             has_corners: true,
-            has_borders: true,
+            has_borders: false,
             expand_corners: true,
             has_corner_box_shadow: false,
-            has_underline: true,
-            disabled: false,
-            hidden: false,
-            chipped: false,
-        }
-    }
-}
-
-impl Feature {
-    /// has chipped at the bottom right
-    pub fn chipped() -> Self {
-        Feature {
-            has_borders: false,
-            chipped: true,
-            ..Default::default()
-        }
-    }
-
-    /// regular futuristic button
-    /// don't expand corners
-    #[allow(unused)]
-    pub fn regular() -> Self {
-        Feature::default()
-    }
-
-    pub fn skewed() -> Self {
-        Self {
-            skewed: true,
-            ..Default::default()
-        }
-    }
-
-    /// just like regular but muted
-    /// sound off
-    #[allow(unused)]
-    pub fn muted() -> Self {
-        Self {
-            sound: false,
-            ..Default::default()
-        }
-    }
-
-    /// no corners, no hover
-    #[allow(unused)]
-    pub fn simple() -> Self {
-        Self {
-            has_corners: false,
-            expand_corners: false,
-            has_underline: false,
-            ..Default::default()
-        }
-    }
-
-    ///does not interact
-    #[allow(unused)]
-    pub fn disabled() -> Self {
-        Feature {
-            sound: false,
-            click_highlights: false,
-            has_corners: false,
-            has_borders: true,
-            expand_corners: false,
-            has_underline: false,
-            disabled: true,
-            ..Default::default()
         }
     }
 }
