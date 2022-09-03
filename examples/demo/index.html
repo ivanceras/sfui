@@ -100,7 +100,9 @@
             <div class="preload_spinner"></div>
         </div>
         <script type=module>
-          import init from './pkg/demo.js';
+          import init, * as components from './pkg/demo.js';
+           window.components = {}; 
+           window.components = Object.assign(window.components, components);
           // we explicitly specify to load this module
           init('./pkg/demo_bg.wasm').catch(console.error);
         </script>

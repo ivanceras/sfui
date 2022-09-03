@@ -1,4 +1,5 @@
 //use css_colors::Color;
+use crate::Theme;
 use css_colors::Color;
 use sauron::jss_ns;
 use sauron::wasm_bindgen::JsCast;
@@ -9,6 +10,7 @@ use sauron::{
     prelude::*,
     Node,
 };
+use std::collections::BTreeMap;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::HtmlAudioElement;
 use web_sys::MouseEvent;
@@ -39,6 +41,7 @@ pub struct Button<PMSG> {
     pub width: Option<usize>,
     pub height: Option<usize>,
     component_id: Option<String>,
+    theme: Theme,
 }
 
 #[derive(Debug)]
@@ -86,11 +89,22 @@ pub struct Options {
     pallete: Option<Pallete>,
 }
 
+impl<PMSG> Default for Button<PMSG>
+where
+    PMSG: 'static,
+{
+    fn default() -> Self {
+        Button::with_label_and_theme("Button", Theme::default())
+            .with_options(Options::full())
+            .chipped()
+    }
+}
+
 impl<PMSG> Button<PMSG>
 where
     PMSG: 'static,
 {
-    pub fn with_label(label: &str) -> Self {
+    pub fn with_label_and_theme(label: &str, theme: Theme) -> Self {
         let options = Options::regular();
         Button {
             options,
@@ -103,6 +117,7 @@ where
             width: None,
             height: None,
             component_id: None,
+            theme,
         }
     }
 
@@ -243,12 +258,41 @@ where
     }
 }
 
+#[custom_element("sfui-button")]
 impl<PMSG> Component<Msg, PMSG> for Button<PMSG>
 where
     PMSG: 'static,
 {
     fn get_component_id(&self) -> Option<&String> {
         self.component_id.as_ref()
+    }
+
+    /// what attributes this component is interested in
+    fn observed_attributes() -> Vec<&'static str> {
+        vec!["label", "theme-primary", "theme-background"]
+    }
+
+    /// called when any of the attributes in observed_attributes is changed
+    fn attributes_changed(&mut self, attributes_values: BTreeMap<String, String>) {
+        log::info!("got some attributes changed: {:?}", attributes_values);
+        for (attribute, value) in attributes_values {
+            match attribute.as_ref() {
+                "label" => self.label = value,
+                "theme-primary" => {
+                    let primary = &value;
+                    let background = &self.theme.background_color;
+                    self.theme =
+                        Theme::from_str(primary, background).expect("must be a valid theme");
+                }
+                "theme-background" => {
+                    let background = &value;
+                    let primary = &self.theme.primary_color;
+                    self.theme =
+                        Theme::from_str(primary, background).expect("must be a valid theme");
+                }
+                _ => log::info!("some other attribute: {}", attribute),
+            }
+        }
     }
 
     fn update(&mut self, msg: Msg) -> Effects<Msg, PMSG> {
@@ -375,6 +419,10 @@ where
         )
         .add_children(self.view_borders())
         .add_children(self.view_corners())
+    }
+
+    fn style(&self) -> String {
+        Self::main_style(&self.theme)
     }
 }
 
@@ -513,7 +561,7 @@ where
         }
     }
 
-    fn corner_style(theme: &crate::Theme) -> String {
+    fn corner_style(theme: &Theme) -> String {
         let base = &theme.controls;
         let transition_time_ms = 250; //transition time for most effects on the button
         let corner_width = 2; // width of the corner clip of this button
@@ -607,7 +655,7 @@ where
         }
     }
 
-    pub fn style(theme: &crate::Theme) -> String {
+    pub fn main_style(theme: &Theme) -> String {
         let base = &theme.controls;
         let transition_time_ms = 250; //transition time for most effects on the button
         let hover_transition_time = 100; // the transition of the lower highligh of the button when hovering
