@@ -139,32 +139,6 @@ where
         DEFAULT_CHIPPED_BUTTON_HEIGHT
     }
 
-    fn view_actual_button(&self, width: Option<usize>, height: Option<usize>) -> Node<Msg> {
-        let class_ns = |class_names| attributes::class_namespaced(COMPONENT_NAME, class_names);
-        button(
-            [
-                class_ns("button"),
-                if let Some(ref status) = self.status {
-                    class_ns(status.class_name())
-                } else {
-                    empty_attr()
-                },
-                disabled(self.feature.disabled),
-                if let Some(width) = width {
-                    style! {width: px(width)}
-                } else {
-                    empty_attr()
-                },
-                if let Some(height) = height {
-                    style! { height: px(height) }
-                } else {
-                    empty_attr()
-                },
-            ],
-            [text(&self.label)],
-        )
-    }
-
     fn view_borders(&self) -> Node<Msg> {
         let class_ns = |class_names| attributes::class_namespaced(COMPONENT_NAME, class_names);
         node_list([
@@ -207,6 +181,55 @@ where
                 div([class_ns("corner corner__bottom-right")], []),
             ),
         ])
+    }
+
+    fn view_button(&self) -> Node<Msg> {
+        if self.feature.chipped {
+            self.view_chipped_button()
+        } else {
+            self.view_plain_button()
+        }
+    }
+
+    fn view_plain_button(&self) -> Node<Msg> {
+        let class_ns = |class_names| attributes::class_namespaced(COMPONENT_NAME, class_names);
+        div(
+            [],
+            [
+                div(
+                    [
+                        class_ns("highlight"),
+                        on_transitionend(|_| Msg::HighlightEnd),
+                    ],
+                    [],
+                ),
+                div(
+                    [class_ns("button_wrap")],
+                    [button(
+                        [
+                            class_ns("button"),
+                            if let Some(ref status) = self.status {
+                                class_ns(status.class_name())
+                            } else {
+                                empty_attr()
+                            },
+                            disabled(self.feature.disabled),
+                            if let Some(width) = self.width {
+                                style! {width: px(width)}
+                            } else {
+                                empty_attr()
+                            },
+                            if let Some(height) = self.height {
+                                style! { height: px(height) }
+                            } else {
+                                empty_attr()
+                            },
+                        ],
+                        [text(&self.label)],
+                    )],
+                ),
+            ],
+        )
     }
 
     fn view_chipped_button(&self) -> Node<Msg> {
@@ -424,26 +447,8 @@ where
                 self.view_borders(),
                 // corners
                 self.view_corners(),
-                if self.feature.chipped {
-                    self.view_chipped_button()
-                } else {
-                    div(
-                        [],
-                        [
-                            div(
-                                [
-                                    class_ns("highlight"),
-                                    on_transitionend(|_| Msg::HighlightEnd),
-                                ],
-                                [],
-                            ),
-                            div(
-                                [class_ns("button_wrap")],
-                                [self.view_actual_button(self.width, self.height)],
-                            ),
-                        ],
-                    )
-                },
+                // the button
+                self.view_button(),
             ],
         )
     }
