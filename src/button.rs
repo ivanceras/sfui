@@ -481,6 +481,11 @@ where
         self
     }
 
+    pub fn with_theme(mut self, theme: Theme) -> Self {
+        self.theme = theme;
+        self
+    }
+
     pub fn add_click_listener<F>(mut self, f: F) -> Self
     where
         F: Fn(MouseEvent) -> PMSG + 'static,

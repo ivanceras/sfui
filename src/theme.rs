@@ -2,7 +2,7 @@ use css_color::ParseColorError;
 use css_colors::{percent, rgba, Color, RGBA};
 use sauron::jss;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Theme {
     pub primary_color: String,    // used in container
     pub secondary_color: String,  // used in container
@@ -15,7 +15,7 @@ pub struct Theme {
 
 /// Issue how to derive pallet from primary?
 /// Maybe mix the pallet color with the primary color
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct StatusPallete {
     /// color for error, default is red
     pub error: RGBA,
@@ -40,7 +40,7 @@ impl Default for StatusPallete {
 
 /// colors to controls
 /// such as buttons, navigation links, frames
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Controls {
     pub hover_color: String,
     pub hover_shadow: String,

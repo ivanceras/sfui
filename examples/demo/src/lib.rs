@@ -15,11 +15,12 @@ struct App {
 
 impl App {
     fn new() -> Self {
+        //let theme = Theme::green_on_black();
+        let theme = Theme::black_on_white();
         App {
-            //theme: Theme::green_on_black(),
-            //theme: Theme::black_on_white(),
-            theme: Theme::default(),
-            button: Button::with_label("This is a long label with some other labels"),
+            theme: theme.clone(),
+            button: Button::with_label("This is a long label with some other labels")
+                .with_theme(theme),
         }
     }
 }
