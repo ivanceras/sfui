@@ -144,9 +144,9 @@ where
         )
     }
 
-    fn view_borders(&self) -> Vec<Node<Msg>> {
+    fn view_borders(&self) -> Node<Msg> {
         let class_ns = |class_names| attributes::class_namespaced(COMPONENT_NAME, class_names);
-        vec![
+        node_list([
             view_if(
                 self.options.has_borders,
                 div([class_ns("border border-left")], []),
@@ -163,12 +163,12 @@ where
                 self.options.has_borders,
                 div([class_ns("border border-bottom")], []),
             ),
-        ]
+        ])
     }
 
-    fn view_corners(&self) -> Vec<Node<Msg>> {
+    fn view_corners(&self) -> Node<Msg> {
         let class_ns = |class_names| attributes::class_namespaced(COMPONENT_NAME, class_names);
-        vec![
+        node_list([
             view_if(
                 self.options.has_corners,
                 div([class_ns("corner corner__top-left")], []),
@@ -185,7 +185,7 @@ where
                 self.options.has_corners,
                 div([class_ns("corner corner__bottom-right")], []),
             ),
-        ]
+        ])
     }
 
     fn view_chipped_button(&self) -> Node<Msg> {
@@ -402,7 +402,10 @@ where
                     self.options.has_hover,
                     div([class_ns("hover hover-bottom")], []),
                 ),
+                // borders
+                self.view_borders(),
                 // corners
+                self.view_corners(),
                 if self.options.chipped {
                     self.view_chipped_button()
                 } else {
@@ -425,8 +428,6 @@ where
                 },
             ],
         )
-        .add_children(self.view_borders())
-        .add_children(self.view_corners())
     }
 
     fn style(&self) -> String {

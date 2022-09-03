@@ -15,8 +15,8 @@ struct App {
 impl App {
     fn new() -> Self {
         App {
-            //theme: Theme::green_on_black(),
-            theme: Theme::black_on_white(),
+            theme: Theme::green_on_black(),
+            //theme: Theme::black_on_white(),
         }
     }
 }
@@ -63,8 +63,7 @@ impl Application<Msg> for App {
     }
 
     fn style(&self) -> String {
-        let mut styles = self.theme.style();
-        styles
+        self.theme.style()
     }
 
     fn update(&mut self, msg: Msg) -> Cmd<Self, Msg> {
