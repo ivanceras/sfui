@@ -42,6 +42,8 @@ pub struct Button<PMSG> {
     pub height: Option<usize>,
     component_id: Option<String>,
     theme: Theme,
+    /// the status of the button which changes the color pallet of the button
+    status: Option<Status>,
 }
 
 #[derive(Debug)]
@@ -95,8 +97,6 @@ pub struct Feature {
     pub disabled: bool,
     /// the bottom right of the button is chipped
     pub chipped: bool,
-    /// the status of the button which changes the color pallet of the button
-    status: Option<Status>,
 }
 
 impl<PMSG> Default for Button<PMSG>
@@ -104,7 +104,20 @@ where
     PMSG: 'static,
 {
     fn default() -> Self {
-        Button::with_label_and_theme("Button", Theme::default()).with_options(Feature::chipped())
+        Self {
+            feature: Feature::chipped(),
+            click_audio_src: "sounds/click.mp3".to_string(),
+            click_audio: None,
+            click: false,
+            hover: false,
+            label: "Button".to_string(),
+            click_listeners: vec![],
+            width: None,
+            height: None,
+            component_id: None,
+            theme: Theme::default(),
+            status: None,
+        }
     }
 }
 
@@ -112,19 +125,10 @@ impl<PMSG> Button<PMSG>
 where
     PMSG: 'static,
 {
-    pub fn with_label_and_theme(label: &str, theme: Theme) -> Self {
-        Button {
-            feature: Feature::default(),
-            click_audio_src: "sounds/click.mp3".to_string(),
-            click_audio: None,
-            click: false,
-            hover: false,
+    pub fn with_label(label: &str) -> Self {
+        Self {
             label: label.to_string(),
-            click_listeners: vec![],
-            width: None,
-            height: None,
-            component_id: None,
-            theme,
+            ..Default::default()
         }
     }
 
@@ -143,7 +147,7 @@ where
         button(
             [
                 class_ns("button"),
-                if let Some(ref status) = self.feature.status {
+                if let Some(ref status) = self.status {
                     class_ns(status.class_name())
                 } else {
                     empty_attr()
@@ -328,7 +332,7 @@ where
                     "disabled" => self.feature = Feature::disabled(),
                     _ => (),
                 },
-                "status" => self.feature.status = Status::from_str(value.as_ref()),
+                "status" => self.status = Status::from_str(value.as_ref()),
                 _ => log::info!("some other attribute: {}", attribute),
             }
         }
@@ -407,7 +411,7 @@ where
                     ("disabled", self.feature.disabled),
                     ("hidden", self.feature.hidden),
                 ]),
-                if let Some(ref status) = self.feature.status {
+                if let Some(ref status) = self.status {
                     class_ns(status.class_name())
                 } else {
                     empty_attr()
@@ -474,26 +478,6 @@ where
 {
     pub fn with_options(mut self, feature: Feature) -> Self {
         self.feature = feature;
-        self
-    }
-
-    pub fn error(mut self) -> Self {
-        self.feature.status = Some(Status::Error);
-        self
-    }
-
-    pub fn success(mut self) -> Self {
-        self.feature.status = Some(Status::Success);
-        self
-    }
-
-    pub fn info(mut self) -> Self {
-        self.feature.status = Some(Status::Info);
-        self
-    }
-
-    pub fn warning(mut self) -> Self {
-        self.feature.status = Some(Status::Warning);
         self
     }
 
@@ -771,6 +755,7 @@ where
                 line_height: 1,
                 user_select: "none",
                 vertical_align: "middle",
+                white_space: "nowrap",
             },
 
             ".error .button": {
@@ -819,6 +804,7 @@ where
                 line_height: 1,
                 user_select: "none",
                 vertical_align: "middle",
+                white_space: "nowrap",
             },
 
             ".chipped_polygon": {
@@ -955,7 +941,6 @@ impl Default for Feature {
             disabled: false,
             hidden: false,
             chipped: false,
-            status: None,
         }
     }
 }
@@ -1019,7 +1004,6 @@ impl Feature {
             disabled: true,
             hidden: false,
             chipped: false,
-            status: None,
         }
     }
 }

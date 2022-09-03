@@ -17,18 +17,16 @@ impl App {
     fn new() -> Self {
         App {
             //theme: Theme::green_on_black(),
-            theme: Theme::black_on_white(),
-            button: Button::with_label_and_theme(
-                "This is a long label with some other labels",
-                Theme::black_on_white(),
-            ),
+            //theme: Theme::black_on_white(),
+            theme: Theme::default(),
+            button: Button::with_label("This is a long label with some other labels"),
         }
     }
 }
 
 impl Application<Msg> for App {
     fn view(&self) -> Node<Msg> {
-        let label = "The quick brown fox jumps over";
+        let label = "Hello!";
         let make_button = |label, feature, status| {
             node! {
                 <div {style!{display:"block"}}>
@@ -45,8 +43,6 @@ impl Application<Msg> for App {
         let features = [
             "chipped", "regular", "skewed", "muted", "disabled", "simple",
         ];
-
-        //let features = ["chipped"];
 
         let statuses = ["none", "success", "error", "warning", "info"];
 
