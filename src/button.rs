@@ -25,7 +25,6 @@ pub enum Msg {
     HoverIn,
     HoverOut,
     HighlightEnd,
-    Mounted(MountEvent),
     ClickAudioMounted(web_sys::Node),
 }
 
@@ -35,12 +34,11 @@ pub struct Button<PMSG> {
     click_audio: Option<HtmlAudioElement>,
     feature: Feature,
     label: String,
-    click: bool,
-    hover: bool,
+    clicked: bool,
+    hovered: bool,
     click_listeners: Vec<Callback<MouseEvent, PMSG>>,
-    pub width: Option<usize>,
-    pub height: Option<usize>,
-    component_id: Option<String>,
+    width: Option<usize>,
+    height: Option<usize>,
     theme: Theme,
     /// the status of the button which changes the color pallet of the button
     status: Option<Status>,
@@ -108,13 +106,12 @@ where
             feature: Feature::chipped(),
             click_audio_src: "sounds/click.mp3".to_string(),
             click_audio: None,
-            click: false,
-            hover: false,
+            clicked: false,
+            hovered: false,
             label: "Button".to_string(),
             click_listeners: vec![],
             width: None,
             height: None,
-            component_id: None,
             theme: Theme::default(),
             status: None,
         }
@@ -216,7 +213,7 @@ where
         let width = self.computed_width();
         let height = self.computed_height();
         let (chip_width, chip_height) = (20, 20);
-        let (gap_x, gap_y) = if self.hover { (8, 8) } else { (4, 4) };
+        let (gap_x, gap_y) = if self.hovered { (8, 8) } else { (4, 4) };
         let top_left = (0, 0);
         let top_right = (width, 0);
         let bottom_left = (0, height);
@@ -290,10 +287,6 @@ impl<PMSG> Component<Msg, PMSG> for Button<PMSG>
 where
     PMSG: 'static,
 {
-    fn get_component_id(&self) -> Option<&String> {
-        self.component_id.as_ref()
-    }
-
     /// what attributes this component is interested in
     fn observed_attributes() -> Vec<&'static str> {
         vec![
@@ -341,7 +334,7 @@ where
     fn update(&mut self, msg: Msg) -> Effects<Msg, PMSG> {
         match msg {
             Msg::Click(mouse_event) => {
-                self.click = true;
+                self.clicked = true;
                 if self.feature.sound {
                     if let Some(audio) = &self.click_audio {
                         let promise = audio.play().expect("must play");
@@ -358,26 +351,15 @@ where
                 Effects::with_external(pmsg_list)
             }
             Msg::HoverIn => {
-                self.hover = true;
+                self.hovered = true;
                 Effects::none()
             }
             Msg::HoverOut => {
-                self.hover = false;
+                self.hovered = false;
                 Effects::none()
             }
             Msg::HighlightEnd => {
-                self.click = false;
-                Effects::none()
-            }
-            Msg::Mounted(me) => {
-                log::debug!("mounted...");
-                log::info!("mounted: {:?}", me);
-                let target_node = me.target_node;
-                let target_elm: &web_sys::Element = target_node.dyn_ref().expect("must cast");
-                if let Some(vdom_id) = target_elm.get_attribute("data-vdom-id") {
-                    log::trace!("mounted: {}", vdom_id);
-                    self.component_id = Some(vdom_id);
-                }
+                self.clicked = false;
                 Effects::none()
             }
             Msg::ClickAudioMounted(node) => {
@@ -399,11 +381,11 @@ where
             [
                 class(COMPONENT_NAME),
                 classes_ns_flag([
-                    ("clicked", self.click),
+                    ("clicked", self.clicked),
                     ("click_highlights", self.feature.click_highlights),
                     ("expand_corners", self.feature.expand_corners),
                     ("has_underline", self.feature.has_underline),
-                    ("hovered", self.hover),
+                    ("hovered", self.hovered),
                     ("skewed", self.feature.skewed),
                     ("chipped", self.feature.chipped),
                     // setting this will also disable the div, therefore will not activate the
@@ -424,7 +406,6 @@ where
                 // layer effect
                 on_mouseover(|_| Msg::HoverIn),
                 on_mouseout(|_| Msg::HoverOut),
-                on_mount(|e| Msg::Mounted(e)),
             ],
             [
                 audio(
