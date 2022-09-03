@@ -26,35 +26,35 @@ impl Application<Msg> for App {
         node! {
             <div {style! {display:"flex"}}>
                  <sfui-button label="Hello..."
-                    look="chipped"
+                    feature="chipped"
                     theme-primary=&self.theme.primary_color
                     theme-background=&self.theme.background_color
                     on_click=|_|Msg::HelloClick/>
                  <sfui-button label="Regular"
-                    look="regular"
+                    feature="regular"
                     theme-primary=&self.theme.primary_color
                     theme-background=&self.theme.background_color
                     on_click=|_|Msg::WorldClick/>
                  <sfui-button label="skewed"
-                    look="skewed"
+                    feature="skewed"
                     theme-primary=&self.theme.primary_color
                     theme-background=&self.theme.background_color
                     on_click=|_|Msg::WorldClick/>
 
                  <sfui-button label="Muted!"
-                    look="muted"
+                    feature="muted"
                     theme-primary=&self.theme.primary_color
                     theme-background=&self.theme.background_color
                     on_click=|_|Msg::WorldClick/>
 
                  <sfui-button label="Disabled!"
-                    look="disabled"
+                    feature="disabled"
                     theme-primary=&self.theme.primary_color
                     theme-background=&self.theme.background_color
                     on_click=|_|Msg::WorldClick/>
 
                  <sfui-button label="Simple"
-                    look="simple"
+                    feature="simple"
                     theme-primary=&self.theme.primary_color
                     theme-background=&self.theme.background_color
                     on_click=|_|Msg::WorldClick/>

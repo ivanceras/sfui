@@ -45,20 +45,20 @@ pub struct Button<PMSG> {
 }
 
 #[derive(Debug)]
-enum Pallete {
+enum Status {
     Error,
     Success,
     Info,
     Warning,
 }
 
-impl Pallete {
+impl Status {
     fn class_name(&self) -> &'static str {
         match self {
-            Pallete::Error => "error",
-            Pallete::Success => "success",
-            Pallete::Info => "info",
-            Pallete::Warning => "warning",
+            Status::Error => "error",
+            Status::Success => "success",
+            Status::Info => "info",
+            Status::Warning => "warning",
         }
     }
 }
@@ -85,8 +85,8 @@ pub struct Feature {
     pub disabled: bool,
     /// the bottom right of the button is chipped
     pub chipped: bool,
-    /// the pallete color of the button
-    pallete: Option<Pallete>,
+    /// the status of the button which changes the color pallet of the button
+    status: Option<Status>,
 }
 
 impl<PMSG> Default for Button<PMSG>
@@ -123,8 +123,8 @@ where
         button(
             [
                 class_ns("button"),
-                if let Some(ref pallete) = self.feature.pallete {
-                    class_ns(pallete.class_name())
+                if let Some(ref status) = self.feature.status {
+                    class_ns(status.class_name())
                 } else {
                     empty_attr()
                 },
@@ -266,7 +266,7 @@ where
 
     /// what attributes this component is interested in
     fn observed_attributes() -> Vec<&'static str> {
-        vec!["label", "theme-primary", "theme-background", "look"]
+        vec!["label", "theme-primary", "theme-background", "feature"]
     }
 
     /// called when any of the attributes in observed_attributes is changed
@@ -287,7 +287,7 @@ where
                     self.theme =
                         Theme::from_str(primary, background).expect("must be a valid theme");
                 }
-                "look" => match value.as_ref() {
+                "feature" => match value.as_ref() {
                     "regular" => self.feature = Feature::regular(),
                     "skewed" => self.feature = Feature::skewed(),
                     "muted" => self.feature = Feature::muted(),
@@ -374,8 +374,8 @@ where
                     ("disabled", self.feature.disabled),
                     ("hidden", self.feature.hidden),
                 ]),
-                if let Some(ref pallete) = self.feature.pallete {
-                    class_ns(pallete.class_name())
+                if let Some(ref status) = self.feature.status {
+                    class_ns(status.class_name())
                 } else {
                     empty_attr()
                 },
@@ -455,22 +455,22 @@ where
     }
 
     pub fn error(mut self) -> Self {
-        self.feature.pallete = Some(Pallete::Error);
+        self.feature.status = Some(Status::Error);
         self
     }
 
     pub fn success(mut self) -> Self {
-        self.feature.pallete = Some(Pallete::Success);
+        self.feature.status = Some(Status::Success);
         self
     }
 
     pub fn info(mut self) -> Self {
-        self.feature.pallete = Some(Pallete::Info);
+        self.feature.status = Some(Status::Info);
         self
     }
 
     pub fn warning(mut self) -> Self {
-        self.feature.pallete = Some(Pallete::Warning);
+        self.feature.status = Some(Status::Warning);
         self
     }
 
@@ -501,23 +501,23 @@ where
             },
 
             ".error .border": {
-                border_color: theme.pallete.error.to_css(),
-                box_shadow: format!("{} {}",px([0, 0, 4]), theme.pallete.error.to_css()),
+                border_color: theme.error().to_css(),
+                box_shadow: format!("{} {}",px([0, 0, 4]), theme.error().to_css()),
             },
 
             ".success .border": {
-                border_color: theme.pallete.success.to_css(),
-                box_shadow: format!("{} {}",px([0, 0, 4]), theme.pallete.success.to_css()),
+                border_color: theme.success().to_css(),
+                box_shadow: format!("{} {}",px([0, 0, 4]), theme.success().to_css()),
             },
 
             ".info .border": {
-                border_color: theme.pallete.info.to_css(),
-                box_shadow: format!("{} {}",px([0, 0, 4]), theme.pallete.info.to_css()),
+                border_color: theme.info().to_css(),
+                box_shadow: format!("{} {}",px([0, 0, 4]), theme.info().to_css()),
             },
 
             ".warning .border": {
-                border_color: theme.pallete.warning.to_css(),
-                box_shadow: format!("{} {}",px([0, 0, 4]), theme.pallete.warning.to_css()),
+                border_color: theme.warning().to_css(),
+                box_shadow: format!("{} {}",px([0, 0, 4]), theme.warning().to_css()),
             },
 
 
@@ -577,19 +577,19 @@ where
             },
 
             ".error .corner": {
-                border_color: theme.pallete.error.to_css(),
+                border_color: theme.error().to_css(),
             },
 
             ".success .corner": {
-                border_color: theme.pallete.success.to_css(),
+                border_color: theme.success().to_css(),
             },
 
             ".info .corner": {
-                border_color: theme.pallete.info.to_css(),
+                border_color: theme.info().to_css(),
             },
 
             ".warning .corner": {
-                border_color: theme.pallete.warning.to_css(),
+                border_color: theme.warning().to_css(),
             },
 
 
@@ -669,7 +669,7 @@ where
                 visibility: "hidden",
             },
 
-            // HOVER at the lower  part of the button
+            // hover effect at the lower part of the button
             ".underline": {
                 border_color: base.hover_color.clone(),
                 box_shadow: format!("{} {}", px([0,-2, 4]), base.hover_shadow.clone()),
@@ -699,23 +699,23 @@ where
             },
 
             ".error .underline": {
-                border_color: theme.pallete.error.to_css(),
-                box_shadow: format!("{} {}",px([0, -2, 4]), theme.pallete.error.to_css()),
+                border_color: theme.error().to_css(),
+                box_shadow: format!("{} {}",px([0, -2, 4]), theme.error().to_css()),
             },
 
             ".success .underline": {
-                border_color: theme.pallete.success.to_css(),
-                box_shadow: format!("{} {}",px([0, -2, 4]), theme.pallete.success.to_css()),
+                border_color: theme.success().to_css(),
+                box_shadow: format!("{} {}",px([0, -2, 4]), theme.success().to_css()),
             },
 
             ".info .underline": {
-                border_color: theme.pallete.info.to_css(),
-                box_shadow: format!("{} {}",px([0, -2, 4]), theme.pallete.info.to_css()),
+                border_color: theme.info().to_css(),
+                box_shadow: format!("{} {}",px([0, -2, 4]), theme.info().to_css()),
             },
 
             ".warning .underline": {
-                border_color: theme.pallete.warning.to_css(),
-                box_shadow: format!("{} {}",px([0, -2, 4]), theme.pallete.warning.to_css()),
+                border_color: theme.warning().to_css(),
+                box_shadow: format!("{} {}",px([0, -2, 4]), theme.warning().to_css()),
             },
 
             ".button_wrap": {
@@ -747,19 +747,19 @@ where
             },
 
             ".error .button": {
-                border_color: theme.pallete.error.to_css(),
+                border_color: theme.error().to_css(),
             },
 
             ".success .button": {
-                border_color: theme.pallete.success.to_css(),
+                border_color: theme.success().to_css(),
             },
 
             ".info .button": {
-                border_color: theme.pallete.info.to_css(),
+                border_color: theme.info().to_css(),
             },
 
             ".warning .button": {
-                border_color: theme.pallete.warning.to_css(),
+                border_color: theme.warning().to_css(),
             },
 
             ".chipped_wrapper": {
@@ -809,40 +809,40 @@ where
             },
 
             ".error .chipped_polygon": {
-                stroke: theme.pallete.error.to_css(),
+                stroke: theme.error().to_css(),
             },
 
             ".success .chipped_polygon": {
-                stroke: theme.pallete.success.to_css(),
+                stroke: theme.success().to_css(),
             },
 
             ".info .chipped_polygon": {
-                stroke: theme.pallete.info.to_css(),
+                stroke: theme.info().to_css(),
             },
 
             ".warning .chipped_polygon": {
-                stroke: theme.pallete.warning.to_css(),
+                stroke: theme.warning().to_css(),
             },
 
 
             ".error .triangle": {
-                fill: theme.pallete.error.to_css(),
-                stroke: theme.pallete.error.to_css(),
+                fill: theme.error().to_css(),
+                stroke: theme.error().to_css(),
             },
 
             ".success .triangle": {
-                fill: theme.pallete.success.to_css(),
-                stroke: theme.pallete.success.to_css(),
+                fill: theme.success().to_css(),
+                stroke: theme.success().to_css(),
             },
 
             ".info .triangle": {
-                fill: theme.pallete.info.to_css(),
-                stroke: theme.pallete.info.to_css(),
+                fill: theme.info().to_css(),
+                stroke: theme.info().to_css(),
             },
 
             ".warning .triangle": {
-                fill: theme.pallete.warning.to_css(),
-                stroke: theme.pallete.warning.to_css(),
+                fill: theme.warning().to_css(),
+                stroke: theme.warning().to_css(),
             },
 
 
@@ -864,19 +864,19 @@ where
             },
 
             ".click_highlights.clicked.error .highlight": {
-                background_color: theme.pallete.error.to_css(),
+                background_color: theme.error().to_css(),
             },
 
             ".click_highlights.clicked.success .highlight": {
-                background_color: theme.pallete.success.to_css(),
+                background_color: theme.success().to_css(),
             },
 
             ".click_highlights.clicked.info .highlight": {
-                background_color: theme.pallete.info.to_css(),
+                background_color: theme.info().to_css(),
             },
 
             ".click_highlights.clicked.warning .highlight": {
-                background_color: theme.pallete.warning.to_css(),
+                background_color: theme.warning().to_css(),
             },
 
             ".click_highlights.clicked .chipped_polygon": {
@@ -884,19 +884,19 @@ where
             },
 
             ".click_highlights.clicked.error .chipped_polygon": {
-                fill: theme.pallete.error.to_css(),
+                fill: theme.error().to_css(),
             },
 
             ".click_highlights.clicked.success .chipped_polygon": {
-                fill: theme.pallete.success.to_css(),
+                fill: theme.success().to_css(),
             },
 
             ".click_highlights.clicked.info .chipped_polygon": {
-                fill: theme.pallete.info.to_css(),
+                fill: theme.info().to_css(),
             },
 
             ".click_highlights.clicked.warning .chipped_polygon": {
-                fill: theme.pallete.warning.to_css(),
+                fill: theme.warning().to_css(),
             },
 
             ".skewed": {
@@ -928,7 +928,7 @@ impl Default for Feature {
             disabled: false,
             hidden: false,
             chipped: false,
-            pallete: None,
+            status: None,
         }
     }
 }
@@ -992,7 +992,7 @@ impl Feature {
             disabled: true,
             hidden: false,
             chipped: false,
-            pallete: None,
+            status: None,
         }
     }
 }

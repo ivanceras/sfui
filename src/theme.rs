@@ -9,14 +9,14 @@ pub struct Theme {
     pub background_color: String, // used in container
     pub accent_color: String,
     pub accent_shadow: String,
-    pub pallete: Pallete,
+    status_pallete: StatusPallete,
     pub controls: Controls,
 }
 
 /// Issue how to derive pallet from primary?
 /// Maybe mix the pallet color with the primary color
 #[derive(PartialEq, Debug)]
-pub struct Pallete {
+pub struct StatusPallete {
     /// color for error, default is red
     pub error: RGBA,
     /// color for success, default is green
@@ -27,7 +27,7 @@ pub struct Pallete {
     pub warning: RGBA,
 }
 
-impl Default for Pallete {
+impl Default for StatusPallete {
     fn default() -> Self {
         Self {
             error: rgba(255, 0, 0, 1.0),
@@ -69,7 +69,7 @@ impl Theme {
         Ok(Self::calculate_theme(
             primary?,
             background?,
-            Pallete::default(),
+            StatusPallete::default(),
         ))
     }
 
@@ -94,21 +94,21 @@ impl Theme {
     pub fn bondi_blue_on_dark() -> Self {
         let primary = rgba(2, 157, 187, 1.0); // main theme
         let background = rgba(0, 0, 0, 1.0);
-        Self::calculate_theme(primary, background, Pallete::default())
+        Self::calculate_theme(primary, background, StatusPallete::default())
     }
 
     #[allow(unused)]
     pub fn white_on_dark() -> Self {
         let primary = rgba(255, 255, 255, 1.0);
         let background = rgba(0, 0, 0, 1.0);
-        Self::calculate_theme(primary, background, Pallete::default())
+        Self::calculate_theme(primary, background, StatusPallete::default())
     }
 
     #[allow(unused)]
     pub fn green_on_black() -> Self {
         let primary = rgba(0, 255, 0, 1.0);
         let background = rgba(0, 0, 0, 1.0);
-        Self::calculate_theme(primary, background, Pallete::default())
+        Self::calculate_theme(primary, background, StatusPallete::default())
     }
 
     #[allow(unused)]
@@ -116,12 +116,16 @@ impl Theme {
         Self::calculate_theme(
             rgba(0, 0, 0, 1.0),
             rgba(255, 255, 255, 1.0),
-            Pallete::default(),
+            StatusPallete::default(),
         )
     }
 
     /// light: if background is light and foreground is dark
-    pub fn calculate_theme(foreground: RGBA, background: RGBA, pallete: Pallete) -> Self {
+    pub fn calculate_theme(
+        foreground: RGBA,
+        background: RGBA,
+        status_pallete: StatusPallete,
+    ) -> Self {
         let grey = rgba(128, 128, 128, 1.0);
         let light = background.is_lighter(&grey);
 
@@ -168,47 +172,47 @@ impl Theme {
             primary.mix(background, percent(15)).fadeout(percent(35))
         };
 
-        let pallete = if light {
-            let error = pallete
+        let status_pallete = if light {
+            let error = status_pallete
                 .error
                 .mix(background, percent(80))
                 .fadein(percent(20));
-            let success = pallete
+            let success = status_pallete
                 .success
                 .mix(background, percent(80))
                 .fadein(percent(20));
-            let info = pallete
+            let info = status_pallete
                 .info
                 .mix(background, percent(80))
                 .fadein(percent(20));
-            let warning = pallete
+            let warning = status_pallete
                 .warning
                 .mix(background, percent(80))
                 .fadein(percent(20));
-            Pallete {
+            StatusPallete {
                 error,
                 success,
                 info,
                 warning,
             }
         } else {
-            let error = pallete
+            let error = status_pallete
                 .error
                 .mix(background, percent(80))
                 .fadeout(percent(20));
-            let success = pallete
+            let success = status_pallete
                 .success
                 .mix(background, percent(80))
                 .fadeout(percent(20));
-            let info = pallete
+            let info = status_pallete
                 .info
                 .mix(background, percent(80))
                 .fadeout(percent(20));
-            let warning = pallete
+            let warning = status_pallete
                 .warning
                 .mix(background, percent(80))
                 .fadeout(percent(20));
-            Pallete {
+            StatusPallete {
                 error,
                 success,
                 info,
@@ -222,7 +226,7 @@ impl Theme {
             background_color: background_color.to_css(),
             accent_color: accent.to_css(),
             accent_shadow: accent_shadow.to_css(),
-            pallete,
+            status_pallete,
 
             controls: Controls {
                 hover_shadow: primary.to_css(),
@@ -238,6 +242,24 @@ impl Theme {
                 link_color: accent.to_css(),
             },
         }
+    }
+}
+
+impl Theme {
+    pub fn error(&self) -> RGBA {
+        self.status_pallete.error
+    }
+
+    pub fn warning(&self) -> RGBA {
+        self.status_pallete.warning
+    }
+
+    pub fn info(&self) -> RGBA {
+        self.status_pallete.info
+    }
+
+    pub fn success(&self) -> RGBA {
+        self.status_pallete.success
     }
 }
 
