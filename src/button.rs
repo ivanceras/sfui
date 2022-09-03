@@ -78,7 +78,7 @@ pub struct Feature {
     /// the button has borders
     pub has_borders: bool,
     /// enable/disable hover effect
-    pub has_hover: bool,
+    pub has_underline: bool,
     /// expand corners when hovered
     pub expand_corners: bool,
     /// the button is disabled
@@ -365,7 +365,7 @@ where
                     ("clicked", self.click),
                     ("click_highlights", self.feature.click_highlights),
                     ("expand_corners", self.feature.expand_corners),
-                    ("has_hover", self.feature.has_hover),
+                    ("has_underline", self.feature.has_underline),
                     ("hovered", self.hover),
                     ("skewed", self.feature.skewed),
                     ("chipped", self.feature.chipped),
@@ -397,10 +397,10 @@ where
                     ],
                     [],
                 ),
-                // hover
+                // underline when mouse underline
                 view_if(
-                    self.feature.has_hover,
-                    div([class_ns("hover hover-bottom")], []),
+                    self.feature.has_underline,
+                    div([class_ns("underline underline-bottom")], []),
                 ),
                 // borders
                 self.view_borders(),
@@ -670,7 +670,7 @@ where
             },
 
             // HOVER at the lower  part of the button
-            ".hover": {
+            ".underline": {
                 border_color: base.hover_color.clone(),
                 box_shadow: format!("{} {}", px([0,-2, 4]), base.hover_shadow.clone()),
                 z_index: 4,
@@ -680,17 +680,17 @@ where
                 border_style: "solid",
             },
 
-            ".has_hover.hovered .hover": {
+            ".has_underline.hovered .underline": {
                 width: percent(96),
             },
 
-            ".has_hover.hovered.chipped .hover": {
+            ".has_underline.hovered.chipped .underline": {
                 width: percent(80),
                 transform: format!("skewX({}deg) translate({}, {})", -45, percent(-57), 0),
                 transform_origin: "bottom left",
             },
 
-            ".hover-bottom": {
+            ".underline-bottom": {
                 width: 0,
                 left: percent(50),
                 bottom: px(2),
@@ -698,22 +698,22 @@ where
                 border_width: px([4, 0, 0, 0]),
             },
 
-            ".error .hover": {
+            ".error .underline": {
                 border_color: theme.pallete.error.to_css(),
                 box_shadow: format!("{} {}",px([0, -2, 4]), theme.pallete.error.to_css()),
             },
 
-            ".success .hover": {
+            ".success .underline": {
                 border_color: theme.pallete.success.to_css(),
                 box_shadow: format!("{} {}",px([0, -2, 4]), theme.pallete.success.to_css()),
             },
 
-            ".info .hover": {
+            ".info .underline": {
                 border_color: theme.pallete.info.to_css(),
                 box_shadow: format!("{} {}",px([0, -2, 4]), theme.pallete.info.to_css()),
             },
 
-            ".warning .hover": {
+            ".warning .underline": {
                 border_color: theme.pallete.warning.to_css(),
                 box_shadow: format!("{} {}",px([0, -2, 4]), theme.pallete.warning.to_css()),
             },
@@ -924,7 +924,7 @@ impl Default for Feature {
             has_corners: true,
             has_borders: true,
             expand_corners: true,
-            has_hover: true,
+            has_underline: true,
             disabled: false,
             hidden: false,
             chipped: false,
@@ -973,7 +973,7 @@ impl Feature {
         Self {
             has_corners: false,
             expand_corners: false,
-            has_hover: false,
+            has_underline: false,
             ..Default::default()
         }
     }
@@ -988,7 +988,7 @@ impl Feature {
             has_corners: false,
             has_borders: true,
             expand_corners: false,
-            has_hover: false,
+            has_underline: false,
             disabled: true,
             hidden: false,
             chipped: false,
