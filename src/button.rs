@@ -16,7 +16,7 @@ use web_sys::HtmlAudioElement;
 use web_sys::MouseEvent;
 
 const COMPONENT_NAME: &str = "sfui-button";
-const DEFAULT_CHIPPED_BUTTON_WIDTH: usize = 200;
+const DEFAULT_CHIPPED_BUTTON_WIDTH: usize = 100;
 const DEFAULT_CHIPPED_BUTTON_HEIGHT: usize = 40;
 
 #[derive(Clone, Debug)]
@@ -59,6 +59,16 @@ impl Status {
             Status::Success => "success",
             Status::Info => "info",
             Status::Warning => "warning",
+        }
+    }
+
+    fn from_str(class: &str) -> Option<Self> {
+        match class {
+            "error" => Some(Status::Error),
+            "success" => Some(Status::Success),
+            "info" => Some(Status::Info),
+            "warning" => Some(Status::Warning),
+            _ => None,
         }
     }
 }
@@ -116,6 +126,16 @@ where
             component_id: None,
             theme,
         }
+    }
+
+    fn computed_width(&self) -> usize {
+        let font_width = 10;
+        let label_width = self.label.len() * font_width;
+        std::cmp::max(DEFAULT_CHIPPED_BUTTON_WIDTH, label_width)
+    }
+
+    fn computed_height(&self) -> usize {
+        DEFAULT_CHIPPED_BUTTON_HEIGHT
     }
 
     fn view_actual_button(&self, width: Option<usize>, height: Option<usize>) -> Node<Msg> {
@@ -189,8 +209,8 @@ where
     }
 
     fn view_chipped_button(&self) -> Node<Msg> {
-        let width = DEFAULT_CHIPPED_BUTTON_WIDTH;
-        let height = DEFAULT_CHIPPED_BUTTON_HEIGHT;
+        let width = self.computed_width();
+        let height = self.computed_height();
         let (chip_width, chip_height) = (20, 20);
         let (gap_x, gap_y) = if self.hover { (8, 8) } else { (4, 4) };
         let top_left = (0, 0);
@@ -202,7 +222,13 @@ where
         let poly_points = [bottom_left, chip1, chip2, top_right, top_left];
 
         let bottom_right = (width, height);
+
+        //     /
+        //    *-
         let tri_edge1 = (width - chip_width + gap_x, height);
+
+        //      *
+        //     /|
         let tri_edge2 = (width, height - chip_height + gap_y);
         let triangle = [tri_edge1, tri_edge2, bottom_right];
 
@@ -266,7 +292,13 @@ where
 
     /// what attributes this component is interested in
     fn observed_attributes() -> Vec<&'static str> {
-        vec!["label", "theme-primary", "theme-background", "feature"]
+        vec![
+            "label",
+            "theme-primary",
+            "theme-background",
+            "feature",
+            "status",
+        ]
     }
 
     /// called when any of the attributes in observed_attributes is changed
@@ -296,6 +328,7 @@ where
                     "disabled" => self.feature = Feature::disabled(),
                     _ => (),
                 },
+                "status" => self.feature.status = Status::from_str(value.as_ref()),
                 _ => log::info!("some other attribute: {}", attribute),
             }
         }
@@ -431,7 +464,7 @@ where
     }
 
     fn style(&self) -> String {
-        Self::main_style(&self.theme)
+        self.main_style()
     }
 }
 
@@ -441,16 +474,6 @@ where
 {
     pub fn with_options(mut self, feature: Feature) -> Self {
         self.feature = feature;
-        self
-    }
-
-    pub fn width(mut self, width: usize) -> Self {
-        self.width = Some(width);
-        self
-    }
-
-    pub fn height(mut self, height: usize) -> Self {
-        self.height = Some(height);
         self
     }
 
@@ -649,11 +672,15 @@ where
         }
     }
 
-    pub fn main_style(theme: &Theme) -> String {
+    fn main_style(&self) -> String {
+        let theme = &self.theme;
         let base = &theme.controls;
         let transition_time_ms = 250; //transition time for most effects on the button
         let hover_transition_time = 100; // the transition of the lower highligh of the button when hovering
         let highlight_transition = 50; // the transition time for the highlight color of the button when clicked
+
+        let width = self.computed_width();
+        let height = self.computed_height();
 
         let main = jss_ns_pretty! {COMPONENT_NAME,
 
@@ -685,7 +712,7 @@ where
             },
 
             ".has_underline.hovered.chipped .underline": {
-                width: percent(80),
+                width: percent(70),
                 transform: format!("skewX({}deg) translate({}, {})", -45, percent(-57), 0),
                 transform_origin: "bottom left",
             },
@@ -764,14 +791,14 @@ where
 
             ".chipped_wrapper": {
                 position: "relative",
-                width: px(DEFAULT_CHIPPED_BUTTON_WIDTH),
-                height: px(DEFAULT_CHIPPED_BUTTON_HEIGHT),
+                width: px(width),
+                height: px(height),
             },
 
             // the svg of the chipped button
             ".chipped_svg": {
-                width: px(DEFAULT_CHIPPED_BUTTON_WIDTH),
-                height: px(DEFAULT_CHIPPED_BUTTON_HEIGHT),
+                width: px(width),
+                height: px(height),
                 position: "absolute",
             },
 

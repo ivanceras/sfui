@@ -4,66 +4,76 @@ use sfui::sauron::prelude::*;
 use sfui::Theme;
 
 enum Msg {
+    ButtonMsg(button::Msg),
     HelloClick,
-    WorldClick,
 }
 
 struct App {
     theme: Theme,
+    button: Button<Msg>,
 }
 
 impl App {
     fn new() -> Self {
         App {
-            theme: Theme::green_on_black(),
-            //theme: Theme::black_on_white(),
+            //theme: Theme::green_on_black(),
+            theme: Theme::black_on_white(),
+            button: Button::with_label_and_theme(
+                "This is a long label with some other labels",
+                Theme::black_on_white(),
+            ),
         }
     }
 }
 
 impl Application<Msg> for App {
     fn view(&self) -> Node<Msg> {
+        let label = "The quick brown fox jumps over";
+        let make_button = |label, feature, status| {
+            node! {
+                <div {style!{display:"block"}}>
+                     <sfui-button label=label
+                        feature=feature
+                        status=status
+                        theme-primary=&self.theme.primary_color
+                        theme-background=&self.theme.background_color
+                        on_click=|_|Msg::HelloClick/>
+                </div>
+            }
+        };
+
+        let features = [
+            "chipped", "regular", "skewed", "muted", "disabled", "simple",
+        ];
+
+        //let features = ["chipped"];
+
+        let statuses = ["none", "success", "error", "warning", "info"];
+
         node! {
-            <div {style! {display:"flex"}}>
-                 <sfui-button label="Hello..."
-                    feature="chipped"
-                    theme-primary=&self.theme.primary_color
-                    theme-background=&self.theme.background_color
-                    on_click=|_|Msg::HelloClick/>
-                 <sfui-button label="Regular"
-                    feature="regular"
-                    theme-primary=&self.theme.primary_color
-                    theme-background=&self.theme.background_color
-                    on_click=|_|Msg::WorldClick/>
-                 <sfui-button label="skewed"
-                    feature="skewed"
-                    theme-primary=&self.theme.primary_color
-                    theme-background=&self.theme.background_color
-                    on_click=|_|Msg::WorldClick/>
-
-                 <sfui-button label="Muted!"
-                    feature="muted"
-                    theme-primary=&self.theme.primary_color
-                    theme-background=&self.theme.background_color
-                    on_click=|_|Msg::WorldClick/>
-
-                 <sfui-button label="Disabled!"
-                    feature="disabled"
-                    theme-primary=&self.theme.primary_color
-                    theme-background=&self.theme.background_color
-                    on_click=|_|Msg::WorldClick/>
-
-                 <sfui-button label="Simple"
-                    feature="simple"
-                    theme-primary=&self.theme.primary_color
-                    theme-background=&self.theme.background_color
-                    on_click=|_|Msg::WorldClick/>
+            <div>
+                {self.button.view().map_msg(Msg::ButtonMsg)}
+                <div {style!{display:"flex", flex_direction:"row"}}>
+                    {
+                        for feature in features{
+                            node!{
+                                <div {style!{display: "flex", flex_direction: "column"}}>
+                                    {
+                                        for status in statuses{
+                                            make_button(label, feature, status)
+                                        }
+                                    }
+                                </div>
+                            }
+                        }
+                    }
+                </div>
             </div>
         }
     }
 
     fn style(&self) -> String {
-        self.theme.style()
+        [self.theme.style(), self.button.style()].join("\n")
     }
 
     fn update(&mut self, msg: Msg) -> Cmd<Self, Msg> {
@@ -72,9 +82,9 @@ impl Application<Msg> for App {
                 log::info!("Somebody clicked on the hello button..");
                 Cmd::none()
             }
-            Msg::WorldClick => {
-                log::info!("Somebody clicked on the world! button..");
-                Cmd::none()
+            Msg::ButtonMsg(bmsg) => {
+                let effects = self.button.update(bmsg);
+                Cmd::from(effects.localize(Msg::ButtonMsg))
             }
         }
     }
