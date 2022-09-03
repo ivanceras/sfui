@@ -9,8 +9,6 @@ pub struct Theme {
     pub background_color: String, // used in container
     pub accent_color: String,
     pub accent_shadow: String,
-    pub primary_font: String,
-    pub secondary_font: String,
     pub pallete: Pallete,
     pub controls: Controls,
 }
@@ -83,6 +81,14 @@ impl Theme {
         }
     }
 
+    pub fn primary_color(&self) -> String {
+        self.primary_color.clone()
+    }
+
+    pub fn background_color(&self) -> String {
+        self.background_color.clone()
+    }
+
     // base theme using a bluish base color #029dbb
     #[allow(unused)]
     pub fn bondi_blue_on_dark() -> Self {
@@ -116,9 +122,6 @@ impl Theme {
 
     /// light: if background is light and foreground is dark
     pub fn calculate_theme(foreground: RGBA, background: RGBA, pallete: Pallete) -> Self {
-        let primary_font = "\"Titillium Web\", \"sans-serif\"".to_string();
-        let secondary_font = "\"Electrolize\", \"sans-serif\"".to_string();
-
         let grey = rgba(128, 128, 128, 1.0);
         let light = background.is_lighter(&grey);
 
@@ -219,8 +222,6 @@ impl Theme {
             background_color: background_color.to_css(),
             accent_color: accent.to_css(),
             accent_shadow: accent_shadow.to_css(),
-            primary_font,
-            secondary_font,
             pallete,
 
             controls: Controls {

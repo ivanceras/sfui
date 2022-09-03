@@ -15,7 +15,8 @@ struct App {
 impl App {
     fn new() -> Self {
         App {
-            theme: Theme::green_on_black(),
+            //theme: Theme::green_on_black(),
+            theme: Theme::black_on_white(),
         }
     }
 }
@@ -24,8 +25,39 @@ impl Application<Msg> for App {
     fn view(&self) -> Node<Msg> {
         node! {
             <div {style! {display:"flex"}}>
-                 <sfui-button label="Hello..." theme-primary="#0F0" theme-background="#000" on_click=|_|Msg::HelloClick/>
-                 <sfui-button label="world!" theme-primary="#F00" theme-background="#000" on_click=|_|Msg::WorldClick/>
+                 <sfui-button label="Hello..."
+                    look="chipped"
+                    theme-primary=&self.theme.primary_color
+                    theme-background=&self.theme.background_color
+                    on_click=|_|Msg::HelloClick/>
+                 <sfui-button label="Regular"
+                    look="regular"
+                    theme-primary=&self.theme.primary_color
+                    theme-background=&self.theme.background_color
+                    on_click=|_|Msg::WorldClick/>
+                 <sfui-button label="skewed"
+                    look="skewed"
+                    theme-primary=&self.theme.primary_color
+                    theme-background=&self.theme.background_color
+                    on_click=|_|Msg::WorldClick/>
+
+                 <sfui-button label="Muted!"
+                    look="muted"
+                    theme-primary=&self.theme.primary_color
+                    theme-background=&self.theme.background_color
+                    on_click=|_|Msg::WorldClick/>
+
+                 <sfui-button label="Disabled!"
+                    look="disabled"
+                    theme-primary=&self.theme.primary_color
+                    theme-background=&self.theme.background_color
+                    on_click=|_|Msg::WorldClick/>
+
+                 <sfui-button label="Simple"
+                    look="simple"
+                    theme-primary=&self.theme.primary_color
+                    theme-background=&self.theme.background_color
+                    on_click=|_|Msg::WorldClick/>
             </div>
         }
     }

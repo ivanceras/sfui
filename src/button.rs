@@ -1,7 +1,7 @@
 //use css_colors::Color;
 use crate::Theme;
 use css_colors::Color;
-use sauron::jss_ns;
+use sauron::jss_ns_pretty;
 use sauron::wasm_bindgen::JsCast;
 use sauron::{
     dom::Callback,
@@ -94,9 +94,7 @@ where
     PMSG: 'static,
 {
     fn default() -> Self {
-        Button::with_label_and_theme("Button", Theme::default())
-            .with_options(Options::full())
-            .chipped()
+        Button::with_label_and_theme("Button", Theme::default()).with_options(Options::chipped())
     }
 }
 
@@ -105,9 +103,8 @@ where
     PMSG: 'static,
 {
     pub fn with_label_and_theme(label: &str, theme: Theme) -> Self {
-        let options = Options::regular();
         Button {
-            options,
+            options: Options::default(),
             click_audio_src: "sounds/click.mp3".to_string(),
             click_audio: None,
             click: false,
@@ -269,7 +266,7 @@ where
 
     /// what attributes this component is interested in
     fn observed_attributes() -> Vec<&'static str> {
-        vec!["label", "theme-primary", "theme-background"]
+        vec!["label", "theme-primary", "theme-background", "look"]
     }
 
     /// called when any of the attributes in observed_attributes is changed
@@ -290,6 +287,15 @@ where
                     self.theme =
                         Theme::from_str(primary, background).expect("must be a valid theme");
                 }
+                "look" => match value.as_ref() {
+                    "regular" => self.options = Options::regular(),
+                    "skewed" => self.options = Options::skewed(),
+                    "muted" => self.options = Options::muted(),
+                    "chipped" => self.options = Options::chipped(),
+                    "simple" => self.options = Options::simple(),
+                    "disabled" => self.options = Options::disabled(),
+                    _ => (),
+                },
                 _ => log::info!("some other attribute: {}", attribute),
             }
         }
@@ -299,12 +305,14 @@ where
         match msg {
             Msg::Click(mouse_event) => {
                 self.click = true;
-                if let Some(audio) = &self.click_audio {
-                    let promise = audio.play().expect("must play");
-                    sauron::spawn_local(async move {
-                        JsFuture::from(promise).await.expect("must not error");
-                        log::info!("done playing..")
-                    });
+                if self.options.sound {
+                    if let Some(audio) = &self.click_audio {
+                        let promise = audio.play().expect("must play");
+                        sauron::spawn_local(async move {
+                            JsFuture::from(promise).await.expect("must not error");
+                            log::info!("done playing..")
+                        });
+                    }
                 }
                 let pmsg_list = self
                     .click_listeners
@@ -402,15 +410,15 @@ where
                         [],
                         [
                             div(
-                                [class_ns("button_wrap")],
-                                [self.view_actual_button(self.width, self.height)],
-                            ),
-                            div(
                                 [
                                     class_ns("highlight"),
                                     on_transitionend(|_| Msg::HighlightEnd),
                                 ],
                                 [],
+                            ),
+                            div(
+                                [class_ns("button_wrap")],
+                                [self.view_actual_button(self.width, self.height)],
                             ),
                         ],
                     )
@@ -474,27 +482,12 @@ where
         self
     }
 
-    pub fn skewed(mut self) -> Self {
-        self.options.skewed = true;
-        self
-    }
-
-    pub fn chipped(mut self) -> Self {
-        self.options.chipped = true;
-        self.options.has_hover = true;
-        self.options.has_borders = false;
-        self.options.has_corners = true;
-        self.options.expand_corners = true;
-        self.options.click_highlights = true;
-        self
-    }
-
     fn border_style(theme: &crate::Theme) -> String {
         let border_width = 1; // the width of the border for each side of the button
         let base = &theme.controls;
         let transition_time_ms = 250; //transition time for most effects on the button
 
-        jss_ns! {COMPONENT_NAME,
+        jss_ns_pretty! {COMPONENT_NAME,
             // BORDERS these are styled divs wrapping the buttons
             ".border": {
                 border_color: base.border_color.clone(),
@@ -568,7 +561,7 @@ where
         let corner_length = 8; // lengths of the corner clip of this button
         let corner_expand_distance = 6; // distance that clips at the corner expands when the button is hovered
 
-        jss_ns! {COMPONENT_NAME,
+        jss_ns_pretty! {COMPONENT_NAME,
             // CORNERS - the fancy divs which clips the button
             ".corner": {
                 width: px(corner_length),
@@ -661,7 +654,7 @@ where
         let hover_transition_time = 100; // the transition of the lower highligh of the button when hovering
         let highlight_transition = 50; // the transition time for the highlight color of the button when clicked
 
-        let main = jss_ns! {COMPONENT_NAME,
+        let main = jss_ns_pretty! {COMPONENT_NAME,
 
             // the ROOT component style
             ".": {
@@ -912,10 +905,10 @@ where
             ".skewed": {
                 transform: format!("skewX({}deg)", -45),
                 transform_origin: "bottom left",
-                margin: px([0, 40, 0, 10]),
+                margin_right: px(40),
             },
 
-            ".skewed .button": {
+            ".skewed .button, .skewed .chipped_button": {
                 transform: format!("skewX({}deg)", 45),
             },
 
@@ -925,30 +918,9 @@ where
     }
 }
 
-impl Options {
-    /// bare minimum button
-    /// no sound
-    #[allow(unused)]
-    pub fn bare() -> Self {
-        Options {
-            sound: false,
-            click_highlights: false,
-            skewed: false,
-            has_corners: false,
-            has_borders: true,
-            expand_corners: false,
-            has_hover: false,
-            disabled: false,
-            hidden: false,
-            chipped: false,
-            pallete: None,
-        }
-    }
-
-    /// full effect, not skewed
-    #[allow(unused)]
-    pub fn full() -> Self {
-        Options {
+impl Default for Options {
+    fn default() -> Self {
+        Self {
             sound: true,
             click_highlights: true,
             skewed: false,
@@ -960,6 +932,17 @@ impl Options {
             hidden: false,
             chipped: false,
             pallete: None,
+        }
+    }
+}
+
+impl Options {
+    /// has chipped at the bottom right
+    pub fn chipped() -> Self {
+        Options {
+            has_borders: false,
+            chipped: true,
+            ..Default::default()
         }
     }
 
@@ -967,18 +950,13 @@ impl Options {
     /// don't expand corners
     #[allow(unused)]
     pub fn regular() -> Self {
-        Options {
-            sound: true,
-            click_highlights: true,
-            skewed: false,
-            has_corners: true,
-            has_borders: true,
-            expand_corners: true,
-            has_hover: true,
-            disabled: false,
-            hidden: false,
-            chipped: false,
-            pallete: None,
+        Options::default()
+    }
+
+    pub fn skewed() -> Self {
+        Self {
+            skewed: true,
+            ..Default::default()
         }
     }
 
@@ -986,36 +964,20 @@ impl Options {
     /// sound off
     #[allow(unused)]
     pub fn muted() -> Self {
-        Options {
+        Self {
             sound: false,
-            click_highlights: true,
-            skewed: false,
-            has_corners: true,
-            has_borders: true,
-            expand_corners: true,
-            has_hover: true,
-            disabled: false,
-            hidden: false,
-            chipped: false,
-            pallete: None,
+            ..Default::default()
         }
     }
 
     /// no corners, no hover
     #[allow(unused)]
     pub fn simple() -> Self {
-        Options {
-            sound: true,
-            click_highlights: true,
-            skewed: false,
+        Self {
             has_corners: false,
-            has_borders: true,
             expand_corners: false,
             has_hover: false,
-            disabled: false,
-            hidden: false,
-            chipped: false,
-            pallete: None,
+            ..Default::default()
         }
     }
 
