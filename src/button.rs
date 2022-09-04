@@ -304,7 +304,6 @@ where
                         let promise = audio.play().expect("must play");
                         sauron::spawn_local(async move {
                             JsFuture::from(promise).await.expect("must not error");
-                            log::info!("done playing..")
                         });
                     }
                 }
@@ -964,7 +963,6 @@ impl<PMSG> CustomElement for Button<PMSG> {
 
     /// called when any of the attributes in observed_attributes is changed
     fn attributes_changed(&mut self, attributes_values: BTreeMap<String, String>) {
-        log::warn!("got some attributes changed: {:?}", attributes_values);
         for (attribute, value) in attributes_values {
             match attribute.as_ref() {
                 "label" => self.label = value,
@@ -990,7 +988,7 @@ impl<PMSG> CustomElement for Button<PMSG> {
                     _ => (),
                 },
                 "status" => self.status = Status::from_str(value.as_ref()),
-                _ => log::info!("some other attribute: {}", attribute),
+                _ => (),
             }
         }
     }
@@ -1055,7 +1053,6 @@ impl ButtonCustomElement {
     pub fn attribute_changed_callback(&self) {
         use sauron::wasm_bindgen::JsCast;
         use std::ops::DerefMut;
-        log::info!("attribute changed...");
         let mount_node = self.program.mount_node();
         let mount_element: &web_sys::Element = mount_node.unchecked_ref();
         let attribute_names = mount_element.get_attribute_names();
@@ -1069,7 +1066,6 @@ impl ButtonCustomElement {
                 attribute_values.insert(attr_name, attr_value);
             }
         }
-        log::warn!("got attribute values: {:#?}", attribute_values);
         self.program
             .app
             .borrow_mut()
@@ -1082,23 +1078,17 @@ impl ButtonCustomElement {
     pub fn connected_callback(&mut self) {
         use std::ops::Deref;
         self.program.mount();
-        log::info!("Component is connected..");
         let component_style = self.program.app.borrow().style();
         self.program.inject_style_to_mount(&component_style);
         self.program.update_dom();
     }
 
     #[wasm_bindgen(method)]
-    pub fn disconnected_callback(&mut self) {
-        log::info!("Component is disconnected..");
-    }
+    pub fn disconnected_callback(&mut self) {}
     #[wasm_bindgen(method)]
-    pub fn adopted_callback(&mut self) {
-        log::info!("Component is adopted..");
-    }
+    pub fn adopted_callback(&mut self) {}
 }
 
 pub fn register() {
-    log::info!("registering button..");
     sauron::register_custom_element("sfui-button", "ButtonCustomElement", "HTMLElement");
 }

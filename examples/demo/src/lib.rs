@@ -79,7 +79,7 @@ impl Application<Msg> for App {
                 <sfui-frame
                     theme-primary=&self.theme.primary_color
                     theme-background=&self.theme.background_color
-                    />
+                    >"This are the content of sfui-frame!!"</sfui-frame>
             </div>
         }
     }

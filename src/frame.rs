@@ -749,6 +749,145 @@ impl Default for Feature {
     }
 }
 
+struct AppMsg(Box<Msg<AppMsg>>);
+
+struct FrameWrapApp {
+    widget: Frame<AppMsg>,
+}
+
+impl Application<AppMsg> for FrameWrapApp {
+    fn update(&mut self, msg: AppMsg) -> Cmd<Self, AppMsg> {
+        use std::ops::Deref;
+
+        let effects = self.widget.update(*msg.0);
+        let mount_attributes = self.widget.attributes_for_mount();
+        Cmd::batch([
+            Cmd::from(effects.localize(|wmsg| AppMsg(Box::new(wmsg)))),
+            Cmd::new(|program| {
+                program.update_mount_attributes(mount_attributes);
+            }),
+        ])
+    }
+
+    fn view(&self) -> Node<AppMsg> {
+        self.widget
+            .view([text("This is a children node")])
+            .map_msg(|wmsg| AppMsg(Box::new(wmsg)))
+    }
+
+    fn style(&self) -> String {
+        self.widget.style()
+    }
+}
+
+impl<PMSG> CustomElement for Frame<PMSG> {
+    /// what attributes this component is interested in
+    fn observed_attributes() -> Vec<&'static str> {
+        vec![
+            "label",
+            "theme-primary",
+            "theme-background",
+            "feature",
+            "status",
+        ]
+    }
+
+    /// called when any of the attributes in observed_attributes is changed
+    fn attributes_changed(&mut self, attributes_values: BTreeMap<String, String>) {
+        for (attribute, value) in attributes_values {
+            match attribute.as_ref() {
+                "label" => self.label = value,
+                "theme-primary" => {
+                    let primary = &value;
+                    let background = &self.theme.background_color;
+                    self.theme =
+                        Theme::from_str(primary, background).expect("must be a valid theme");
+                }
+                "theme-background" => {
+                    let background = &value;
+                    let primary = &self.theme.primary_color;
+                    self.theme =
+                        Theme::from_str(primary, background).expect("must be a valid theme");
+                }
+                "status" => self.status = Status::from_str(value.as_ref()),
+                _ => (),
+            }
+        }
+    }
+}
+
+#[wasm_bindgen]
+pub struct FrameCustomElement {
+    program: Program<FrameWrapApp, AppMsg>,
+}
+
+#[wasm_bindgen]
+impl FrameCustomElement {
+    #[wasm_bindgen(constructor)]
+    pub fn new(node: JsValue) -> Self {
+        use sauron::wasm_bindgen::JsCast;
+        let element_node: &web_sys::Element = node.unchecked_ref();
+        let mount_node: &web_sys::Node = node.unchecked_ref();
+        let outer_html = element_node.outer_html();
+        log::debug!("outer html: {:#?}", outer_html);
+        Self {
+            program: Program::new(
+                FrameWrapApp {
+                    widget: Frame::default(),
+                },
+                mount_node,
+                false,
+                true,
+            ),
+        }
+    }
+
+    #[wasm_bindgen(method)]
+    pub fn observed_attributes() -> JsValue {
+        let attributes = Frame::<Msg<()>>::observed_attributes();
+        JsValue::from_serde(&attributes).expect("must be serde")
+    }
+
+    #[wasm_bindgen(method)]
+    pub fn attribute_changed_callback(&self) {
+        use sauron::wasm_bindgen::JsCast;
+        use std::ops::DerefMut;
+        let mount_node = self.program.mount_node();
+        let mount_element: &web_sys::Element = mount_node.unchecked_ref();
+        let attribute_names = mount_element.get_attribute_names();
+        let len = attribute_names.length();
+        let mut attribute_values: std::collections::BTreeMap<String, String> =
+            std::collections::BTreeMap::new();
+        for i in 0..len {
+            let name = attribute_names.get(i);
+            let attr_name = name.as_string().expect("must be a string attribute");
+            if let Some(attr_value) = mount_element.get_attribute(&attr_name) {
+                attribute_values.insert(attr_name, attr_value);
+            }
+        }
+        self.program
+            .app
+            .borrow_mut()
+            .deref_mut()
+            .widget
+            .attributes_changed(attribute_values);
+    }
+
+    #[wasm_bindgen(method)]
+    pub fn connected_callback(&mut self) {
+        use std::ops::Deref;
+        self.program.mount();
+        let component_style = self.program.app.borrow().style();
+        self.program.inject_style_to_mount(&component_style);
+        self.program.update_dom();
+    }
+
+    #[wasm_bindgen(method)]
+    pub fn disconnected_callback(&mut self) {}
+    #[wasm_bindgen(method)]
+    pub fn adopted_callback(&mut self) {}
+}
+
 pub fn register() {
-    log::info!("registering..");
+    sauron::register_custom_element("sfui-frame", "FrameCustomElement", "HTMLElement");
 }

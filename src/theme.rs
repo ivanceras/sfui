@@ -64,8 +64,6 @@ impl Theme {
     pub fn from_str(primary: &str, background: &str) -> Result<Self, ParseColorError> {
         let primary = hex_to_real_rgba(primary);
         let background = hex_to_real_rgba(background);
-        log::debug!("parsing primary: {:?}", primary);
-        log::debug!("parsing background: {:?}", background);
         Ok(Self::calculate_theme(
             primary?,
             background?,
@@ -77,6 +75,7 @@ impl Theme {
         jss! {
             body : {
                 background_color: self.background_color.clone(),
+                color: self.primary_color.clone(),
             }
         }
     }
