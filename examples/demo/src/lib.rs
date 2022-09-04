@@ -24,15 +24,7 @@ impl App {
             theme: theme.clone(),
             button: Button::with_label("This is a long label with some other labels")
                 .with_theme(theme.clone()),
-            frame: Frame::with_label("A frame")
-                .with_theme(theme.clone())
-                .with_content(img(
-                    [
-                        src("./assets/moon.jpg"),
-                        style! {display:"block", width: px(500)},
-                    ],
-                    [],
-                )),
+            frame: Frame::with_label("A frame").with_theme(theme.clone()),
         }
     }
 }
@@ -56,6 +48,8 @@ impl Application<Msg> for App {
             "chipped", "regular", "skewed", "muted", "disabled", "simple",
         ];
         let statuses = ["none", "success", "error", "warning", "info"];
+        //let features = ["chipped"];
+        //let statuses = ["none"];
 
         node! {
             <div>
@@ -75,7 +69,13 @@ impl Application<Msg> for App {
                         }
                     }
                 </div>
-                {self.frame.view().map_msg(|fmsg|Msg::FrameMsg(Box::new(fmsg)))}
+                {self.frame.view([img(
+                    [
+                        src("./assets/moon.jpg"),
+                        style! {display:"block", width: px(500)},
+                    ],
+                    [],
+                )]).map_msg(|fmsg|Msg::FrameMsg(Box::new(fmsg)))}
                 <sfui-frame
                     theme-primary=&self.theme.primary_color
                     theme-background=&self.theme.background_color

@@ -15,5 +15,5 @@ mod theme;
 /// register all the components as custom element in the DOM
 pub fn register_all() {
     button::register();
-    //frame::register();
+    frame::register();
 }

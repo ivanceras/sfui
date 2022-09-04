@@ -288,55 +288,11 @@ where
     }
 }
 
-#[custom_element("sfui-button")]
+//#[custom_element("sfui-button")]
 impl<PMSG> Component<Msg, PMSG> for Button<PMSG>
 where
     PMSG: 'static,
 {
-    /// what attributes this component is interested in
-    fn observed_attributes() -> Vec<&'static str> {
-        vec![
-            "label",
-            "theme-primary",
-            "theme-background",
-            "feature",
-            "status",
-        ]
-    }
-
-    /// called when any of the attributes in observed_attributes is changed
-    fn attributes_changed(&mut self, attributes_values: BTreeMap<String, String>) {
-        log::info!("got some attributes changed: {:?}", attributes_values);
-        for (attribute, value) in attributes_values {
-            match attribute.as_ref() {
-                "label" => self.label = value,
-                "theme-primary" => {
-                    let primary = &value;
-                    let background = &self.theme.background_color;
-                    self.theme =
-                        Theme::from_str(primary, background).expect("must be a valid theme");
-                }
-                "theme-background" => {
-                    let background = &value;
-                    let primary = &self.theme.primary_color;
-                    self.theme =
-                        Theme::from_str(primary, background).expect("must be a valid theme");
-                }
-                "feature" => match value.as_ref() {
-                    "regular" => self.feature = Feature::regular(),
-                    "skewed" => self.feature = Feature::skewed(),
-                    "muted" => self.feature = Feature::muted(),
-                    "chipped" => self.feature = Feature::chipped(),
-                    "simple" => self.feature = Feature::simple(),
-                    "disabled" => self.feature = Feature::disabled(),
-                    _ => (),
-                },
-                "status" => self.status = Status::from_str(value.as_ref()),
-                _ => log::info!("some other attribute: {}", attribute),
-            }
-        }
-    }
-
     fn update(&mut self, msg: Msg) -> Effects<Msg, PMSG> {
         match msg {
             Msg::Click(mouse_event) => {
@@ -990,4 +946,159 @@ impl Feature {
             ..Default::default()
         }
     }
+}
+
+impl<PMSG> CustomElement for Button<PMSG> {
+    /// what attributes this component is interested in
+    fn observed_attributes() -> Vec<&'static str> {
+        vec![
+            "label",
+            "theme-primary",
+            "theme-background",
+            "feature",
+            "status",
+        ]
+    }
+
+    /// called when any of the attributes in observed_attributes is changed
+    fn attributes_changed(&mut self, attributes_values: BTreeMap<String, String>) {
+        log::warn!("got some attributes changed: {:?}", attributes_values);
+        for (attribute, value) in attributes_values {
+            match attribute.as_ref() {
+                "label" => self.label = value,
+                "theme-primary" => {
+                    let primary = &value;
+                    let background = &self.theme.background_color;
+                    self.theme =
+                        Theme::from_str(primary, background).expect("must be a valid theme");
+                }
+                "theme-background" => {
+                    let background = &value;
+                    let primary = &self.theme.primary_color;
+                    self.theme =
+                        Theme::from_str(primary, background).expect("must be a valid theme");
+                }
+                "feature" => match value.as_ref() {
+                    "regular" => self.feature = Feature::regular(),
+                    "skewed" => self.feature = Feature::skewed(),
+                    "muted" => self.feature = Feature::muted(),
+                    "chipped" => self.feature = Feature::chipped(),
+                    "simple" => self.feature = Feature::simple(),
+                    "disabled" => self.feature = Feature::disabled(),
+                    _ => (),
+                },
+                "status" => self.status = Status::from_str(value.as_ref()),
+                _ => log::info!("some other attribute: {}", attribute),
+            }
+        }
+    }
+}
+
+struct AppMsg(Msg);
+
+struct ButtonWrapApp {
+    button: Button<AppMsg>,
+}
+
+impl Application<AppMsg> for ButtonWrapApp {
+    fn update(&mut self, msg: AppMsg) -> Cmd<Self, AppMsg> {
+        let effects = self.button.update(msg.0);
+        let mount_attributes = self.button.attributes_for_mount();
+        Cmd::batch([
+            Cmd::from(effects.localize(AppMsg)),
+            Cmd::new(|program| {
+                program.update_mount_attributes(mount_attributes);
+            }),
+        ])
+    }
+
+    fn view(&self) -> Node<AppMsg> {
+        self.button.view().map_msg(AppMsg)
+    }
+
+    fn style(&self) -> String {
+        self.button.style()
+    }
+}
+
+#[wasm_bindgen]
+struct ButtonCustomElement {
+    program: Program<ButtonWrapApp, AppMsg>,
+}
+
+#[wasm_bindgen]
+impl ButtonCustomElement {
+    #[wasm_bindgen(constructor)]
+    pub fn new(node: JsValue) -> Self {
+        use sauron::wasm_bindgen::JsCast;
+        log::info!("constructor..");
+        let mount_node: &web_sys::Node = node.unchecked_ref();
+        Self {
+            program: Program::new(
+                ButtonWrapApp {
+                    button: Button::default(),
+                },
+                mount_node,
+                false,
+                true,
+            ),
+        }
+    }
+
+    #[wasm_bindgen(method)]
+    pub fn observed_attributes() -> JsValue {
+        let attributes = Button::<AppMsg>::observed_attributes();
+        JsValue::from_serde(&attributes).expect("must be serde")
+    }
+
+    #[wasm_bindgen(method)]
+    pub fn attribute_changed_callback(&self) {
+        use sauron::wasm_bindgen::JsCast;
+        use std::ops::DerefMut;
+        log::info!("attribute changed...");
+        let mount_node = self.program.mount_node();
+        let mount_element: &web_sys::Element = mount_node.unchecked_ref();
+        let attribute_names = mount_element.get_attribute_names();
+        let len = attribute_names.length();
+        let mut attribute_values: std::collections::BTreeMap<String, String> =
+            std::collections::BTreeMap::new();
+        for i in 0..len {
+            let name = attribute_names.get(i);
+            let attr_name = name.as_string().expect("must be a string attribute");
+            if let Some(attr_value) = mount_element.get_attribute(&attr_name) {
+                attribute_values.insert(attr_name, attr_value);
+            }
+        }
+        log::warn!("got attribute values: {:#?}", attribute_values);
+        self.program
+            .app
+            .borrow_mut()
+            .deref_mut()
+            .button
+            .attributes_changed(attribute_values);
+    }
+
+    #[wasm_bindgen(method)]
+    pub fn connected_callback(&mut self) {
+        use std::ops::Deref;
+        self.program.mount();
+        log::info!("Component is connected..");
+        let component_style = self.program.app.borrow().style();
+        self.program.inject_style_to_mount(&component_style);
+        self.program.update_dom();
+    }
+
+    #[wasm_bindgen(method)]
+    pub fn disconnected_callback(&mut self) {
+        log::info!("Component is disconnected..");
+    }
+    #[wasm_bindgen(method)]
+    pub fn adopted_callback(&mut self) {
+        log::info!("Component is adopted..");
+    }
+}
+
+pub fn register() {
+    log::info!("registering button..");
+    sauron::register_custom_element("sfui-button", "ButtonCustomElement", "HTMLElement");
 }

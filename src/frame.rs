@@ -188,45 +188,10 @@ where
 }
 
 //#[custom_element("sfui-frame")]
-impl<PMSG> Component<Msg<PMSG>, PMSG> for Frame<PMSG>
+impl<PMSG> Container<Msg<PMSG>, PMSG> for Frame<PMSG>
 where
     PMSG: 'static,
 {
-    /// what attributes this component is interested in
-    fn observed_attributes() -> Vec<&'static str> {
-        vec![
-            "label",
-            "theme-primary",
-            "theme-background",
-            "feature",
-            "status",
-        ]
-    }
-
-    /// called when any of the attributes in observed_attributes is changed
-    fn attributes_changed(&mut self, attributes_values: BTreeMap<String, String>) {
-        log::info!("got some attributes changed: {:?}", attributes_values);
-        for (attribute, value) in attributes_values {
-            match attribute.as_ref() {
-                "label" => self.label = value,
-                "theme-primary" => {
-                    let primary = &value;
-                    let background = &self.theme.background_color;
-                    self.theme =
-                        Theme::from_str(primary, background).expect("must be a valid theme");
-                }
-                "theme-background" => {
-                    let background = &value;
-                    let primary = &self.theme.primary_color;
-                    self.theme =
-                        Theme::from_str(primary, background).expect("must be a valid theme");
-                }
-                "status" => self.status = Status::from_str(value.as_ref()),
-                _ => log::info!("some other attribute: {}", attribute),
-            }
-        }
-    }
-
     fn update(&mut self, msg: Msg<PMSG>) -> Effects<Msg<PMSG>, PMSG> {
         match msg {
             Msg::Click(mouse_event) => {
@@ -253,7 +218,7 @@ where
         }
     }
 
-    fn view(&self) -> Node<Msg<PMSG>> {
+    fn view(&self, content: impl IntoIterator<Item = Node<PMSG>>) -> Node<Msg<PMSG>> {
         let class_ns = |class_names| attributes::class_namespaced(COMPONENT_NAME, class_names);
 
         let classes_ns_flag = |class_name_flags| {
@@ -293,11 +258,14 @@ where
                     self.view_corners(),
                     div(
                         [],
+                        /*
                         if let Some(content) = &self.content {
                             vec![content.clone().map_msg(Msg::External)]
                         } else {
                             vec![]
                         },
+                        */
+                        content.into_iter().map(|node| node.map_msg(Msg::External)),
                     ),
                 ],
             )],
@@ -786,4 +754,8 @@ impl Default for Feature {
             has_corner_box_shadow: false,
         }
     }
+}
+
+pub fn register() {
+    log::info!("registering..");
 }
