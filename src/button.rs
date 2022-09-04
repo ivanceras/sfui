@@ -273,13 +273,6 @@ where
                         ),
                         polygon([class_ns("triangle"), points(triangle_points)], []),
                     ],
-                    /*
-                    if let Some(content) = &self.content {
-                        vec![content.clone().map_msg(Msg::External)]
-                    } else {
-                        vec![]
-                    },
-                    */
                 ),
                 button(
                     [
