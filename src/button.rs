@@ -442,206 +442,9 @@ where
     }
 
     fn style(&self) -> String {
-        self.main_style()
-    }
-}
-
-impl<PMSG> Button<PMSG>
-where
-    PMSG: 'static,
-{
-    pub fn with_options(mut self, feature: Feature) -> Self {
-        self.feature = feature;
-        self
-    }
-
-    pub fn with_theme(mut self, theme: Theme) -> Self {
-        self.theme = theme;
-        self
-    }
-
-    pub fn add_click_listener<F>(mut self, f: F) -> Self
-    where
-        F: Fn(MouseEvent) -> PMSG + 'static,
-    {
-        let cb = Callback::from(f);
-        self.click_listeners.push(cb);
-        self
-    }
-
-    fn border_style(theme: &crate::Theme) -> String {
-        let border_width = 1; // the width of the border for each side of the button
-        let base = &theme.controls;
-        let transition_time_ms = 250; //transition time for most effects on the button
-
-        jss_ns_pretty! {COMPONENT_NAME,
-            // BORDERS these are styled divs wrapping the buttons
-            ".border": {
-                border_color: base.border_color.clone(),
-                box_shadow: format!("{} {}",px([0,0,4]), base.border_shadow.clone()),
-                z_index: 1,
-                opacity: 1,
-                position: "absolute",
-                transition: format!("all {}ms ease-in",transition_time_ms),
-                border_style: "solid",
-            },
-
-            ".error .border": {
-                border_color: theme.error().to_css(),
-                box_shadow: format!("{} {}",px([0, 0, 4]), theme.error().to_css()),
-            },
-
-            ".success .border": {
-                border_color: theme.success().to_css(),
-                box_shadow: format!("{} {}",px([0, 0, 4]), theme.success().to_css()),
-            },
-
-            ".info .border": {
-                border_color: theme.info().to_css(),
-                box_shadow: format!("{} {}",px([0, 0, 4]), theme.info().to_css()),
-            },
-
-            ".warning .border": {
-                border_color: theme.warning().to_css(),
-                box_shadow: format!("{} {}",px([0, 0, 4]), theme.warning().to_css()),
-            },
-
-
-            ".border-left": {
-                top: percent(50),
-                left: 0,
-                height: percent(100),
-                transform: format!("translate({}, {})", 0, percent(-50)),
-                border_width: px([0, 0, 0, border_width]),
-            },
-
-            ".border-right": {
-                top: percent(50),
-                right: 0,
-                height: percent(100),
-                transform: format!("translate({}, {})", 0, percent(-50)),
-                border_width: px([0, 0, 0, border_width]),
-            },
-
-            ".border-top": {
-                top: 0,
-                left: percent(50),
-                width: percent(100),
-                transform: format!("translate({}, {})", percent(-50), 0),
-                border_width: px([border_width, 0, 0, 0]),
-            },
-
-            ".border-bottom": {
-                left: percent(50),
-                width: percent(100),
-                bottom: 0,
-                transform: format!("translate({}, {})", percent(-50), 0),
-                border_width: px([border_width, 0, 0, 0]),
-            },
-        }
-    }
-
-    fn corner_style(theme: &Theme) -> String {
-        let base = &theme.controls;
-        let transition_time_ms = 250; //transition time for most effects on the button
-        let corner_width = 2; // width of the corner clip of this button
-        let corner_length = 8; // lengths of the corner clip of this button
-        let corner_expand_distance = 6; // distance that clips at the corner expands when the button is hovered
-
-        jss_ns_pretty! {COMPONENT_NAME,
-            // CORNERS - the fancy divs which clips the button
-            ".corner": {
-                width: px(corner_length),
-                height: px(corner_length),
-                border_color: base.corner_color.clone(),
-                z_index: 2,
-                opacity: 1,
-                position: "absolute",
-                transition: format!("all {}ms ease-in",transition_time_ms),
-                border_style: "solid",
-            },
-
-            ".has_corner_box_shadow .corner": {
-                box_shadow: format!("{} {}",px([0, 0, 4]), base.corner_shadow.clone()),
-            },
-
-            ".error .corner": {
-                border_color: theme.error().to_css(),
-            },
-
-            ".success .corner": {
-                border_color: theme.success().to_css(),
-            },
-
-            ".info .corner": {
-                border_color: theme.info().to_css(),
-            },
-
-            ".warning .corner": {
-                border_color: theme.warning().to_css(),
-            },
-
-
-            ".corner__top-left": {
-                left: px(-corner_width),
-                top: px(-corner_width),
-                border_width: px([corner_width, 0, 0, corner_width]),
-            },
-
-            ".corner__bottom-left": {
-                left: px(-corner_width),
-                bottom: px(-corner_width),
-                border_width: px([0, 0, corner_width, corner_width]),
-            },
-
-            ".corner__top-right": {
-                right: px(-corner_width),
-                top: px(-corner_width),
-                border_width: px([corner_width, corner_width, 0, 0]),
-            },
-
-            ".corner__bottom-right": {
-                right: px(-corner_width),
-                bottom: px(-corner_width),
-                border_width: px([0, corner_width, corner_width, 0]),
-            },
-
-            // if expand_corners is enabled
-            // the fui_button corners will EXPAND when hovered.
-            //
-            // CSS Notes:
-            // - `.class1.class2 child` means if both class1 and class2 is specified in the
-            // parent, the properties will be applied to this child element
-            //
-            //  - `.class1,.class2 child` means either if either class1 or class2 is specified in the
-            // parent, the properties will be applied to this child element
-            //
-            ".expand_corners.hovered .corner__top-left": {
-                left: px(-corner_expand_distance),
-                top: px(-corner_expand_distance),
-            },
-
-            ".expand_corners.hovered .corner__bottom-left": {
-                left: px(-corner_expand_distance),
-                bottom: px(-corner_expand_distance),
-            },
-
-            ".expand_corners.hovered .corner__top-right": {
-                right: px(-corner_expand_distance),
-                top: px(-corner_expand_distance),
-            },
-
-            ".expand_corners.hovered .corner__bottom-right": {
-                right: px(-corner_expand_distance),
-                bottom: px(-corner_expand_distance),
-            },
-        }
-    }
-
-    fn main_style(&self) -> String {
         let theme = &self.theme;
         let base = &theme.controls;
-        let transition_time_ms = 250; //transition time for most effects on the button
+        let transition_time_ms = self.transition_time_ms(); //transition time for most effects on the button
         let hover_transition_time = 100; // the transition of the lower highligh of the button when hovering
         let highlight_transition = 50; // the transition time for the highlight color of the button when clicked
 
@@ -906,7 +709,207 @@ where
 
         };
 
-        [main, Self::border_style(theme), Self::corner_style(theme)].join("\n")
+        [main, self.border_style(), self.corner_style()].join("\n")
+    }
+}
+
+impl<PMSG> Button<PMSG>
+where
+    PMSG: 'static,
+{
+    pub fn with_options(mut self, feature: Feature) -> Self {
+        self.feature = feature;
+        self
+    }
+
+    pub fn with_theme(mut self, theme: Theme) -> Self {
+        self.theme = theme;
+        self
+    }
+
+    pub fn add_click_listener<F>(mut self, f: F) -> Self
+    where
+        F: Fn(MouseEvent) -> PMSG + 'static,
+    {
+        let cb = Callback::from(f);
+        self.click_listeners.push(cb);
+        self
+    }
+
+    ///transition time for most effects on the button
+    fn transition_time_ms(&self) -> usize {
+        250
+    }
+
+    fn border_style(&self) -> String {
+        let theme = &self.theme;
+        let border_width = 1; // the width of the border for each side of the button
+        let base = &theme.controls;
+        let transition_time_ms = self.transition_time_ms(); //transition time for most effects on the button
+
+        jss_ns_pretty! {COMPONENT_NAME,
+            // BORDERS these are styled divs wrapping the buttons
+            ".border": {
+                border_color: base.border_color.clone(),
+                box_shadow: format!("{} {}",px([0,0,4]), base.border_shadow.clone()),
+                z_index: 1,
+                opacity: 1,
+                position: "absolute",
+                transition: format!("all {}ms ease-in",transition_time_ms),
+                border_style: "solid",
+            },
+
+            ".error .border": {
+                border_color: theme.error().to_css(),
+                box_shadow: format!("{} {}",px([0, 0, 4]), theme.error().to_css()),
+            },
+
+            ".success .border": {
+                border_color: theme.success().to_css(),
+                box_shadow: format!("{} {}",px([0, 0, 4]), theme.success().to_css()),
+            },
+
+            ".info .border": {
+                border_color: theme.info().to_css(),
+                box_shadow: format!("{} {}",px([0, 0, 4]), theme.info().to_css()),
+            },
+
+            ".warning .border": {
+                border_color: theme.warning().to_css(),
+                box_shadow: format!("{} {}",px([0, 0, 4]), theme.warning().to_css()),
+            },
+
+
+            ".border-left": {
+                top: percent(50),
+                left: 0,
+                height: percent(100),
+                transform: format!("translate({}, {})", 0, percent(-50)),
+                border_width: px([0, 0, 0, border_width]),
+            },
+
+            ".border-right": {
+                top: percent(50),
+                right: 0,
+                height: percent(100),
+                transform: format!("translate({}, {})", 0, percent(-50)),
+                border_width: px([0, 0, 0, border_width]),
+            },
+
+            ".border-top": {
+                top: 0,
+                left: percent(50),
+                width: percent(100),
+                transform: format!("translate({}, {})", percent(-50), 0),
+                border_width: px([border_width, 0, 0, 0]),
+            },
+
+            ".border-bottom": {
+                left: percent(50),
+                width: percent(100),
+                bottom: 0,
+                transform: format!("translate({}, {})", percent(-50), 0),
+                border_width: px([border_width, 0, 0, 0]),
+            },
+        }
+    }
+
+    fn corner_style(&self) -> String {
+        let theme = &self.theme;
+        let base = &theme.controls;
+        let transition_time_ms = 250; //transition time for most effects on the button
+        let corner_width = 2; // width of the corner clip of this button
+        let corner_length = 8; // lengths of the corner clip of this button
+        let corner_expand_distance = 6; // distance that clips at the corner expands when the button is hovered
+
+        jss_ns_pretty! {COMPONENT_NAME,
+            // CORNERS - the fancy divs which clips the button
+            ".corner": {
+                width: px(corner_length),
+                height: px(corner_length),
+                border_color: base.corner_color.clone(),
+                z_index: 2,
+                opacity: 1,
+                position: "absolute",
+                transition: format!("all {}ms ease-in",transition_time_ms),
+                border_style: "solid",
+            },
+
+            ".has_corner_box_shadow .corner": {
+                box_shadow: format!("{} {}",px([0, 0, 4]), base.corner_shadow.clone()),
+            },
+
+            ".error .corner": {
+                border_color: theme.error().to_css(),
+            },
+
+            ".success .corner": {
+                border_color: theme.success().to_css(),
+            },
+
+            ".info .corner": {
+                border_color: theme.info().to_css(),
+            },
+
+            ".warning .corner": {
+                border_color: theme.warning().to_css(),
+            },
+
+
+            ".corner__top-left": {
+                left: px(-corner_width),
+                top: px(-corner_width),
+                border_width: px([corner_width, 0, 0, corner_width]),
+            },
+
+            ".corner__bottom-left": {
+                left: px(-corner_width),
+                bottom: px(-corner_width),
+                border_width: px([0, 0, corner_width, corner_width]),
+            },
+
+            ".corner__top-right": {
+                right: px(-corner_width),
+                top: px(-corner_width),
+                border_width: px([corner_width, corner_width, 0, 0]),
+            },
+
+            ".corner__bottom-right": {
+                right: px(-corner_width),
+                bottom: px(-corner_width),
+                border_width: px([0, corner_width, corner_width, 0]),
+            },
+
+            // if expand_corners is enabled
+            // the fui_button corners will EXPAND when hovered.
+            //
+            // CSS Notes:
+            // - `.class1.class2 child` means if both class1 and class2 is specified in the
+            // parent, the properties will be applied to this child element
+            //
+            //  - `.class1,.class2 child` means either if either class1 or class2 is specified in the
+            // parent, the properties will be applied to this child element
+            //
+            ".expand_corners.hovered .corner__top-left": {
+                left: px(-corner_expand_distance),
+                top: px(-corner_expand_distance),
+            },
+
+            ".expand_corners.hovered .corner__bottom-left": {
+                left: px(-corner_expand_distance),
+                bottom: px(-corner_expand_distance),
+            },
+
+            ".expand_corners.hovered .corner__top-right": {
+                right: px(-corner_expand_distance),
+                top: px(-corner_expand_distance),
+            },
+
+            ".expand_corners.hovered .corner__bottom-right": {
+                right: px(-corner_expand_distance),
+                bottom: px(-corner_expand_distance),
+            },
+        }
     }
 }
 
