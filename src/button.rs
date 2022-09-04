@@ -273,6 +273,13 @@ where
                         ),
                         polygon([class_ns("triangle"), points(triangle_points)], []),
                     ],
+                    /*
+                    if let Some(content) = &self.content {
+                        vec![content.clone().map_msg(Msg::External)]
+                    } else {
+                        vec![]
+                    },
+                    */
                 ),
                 button(
                     [
@@ -288,6 +295,8 @@ where
     }
 }
 
+// Note: we are not using the custom element macro yet
+// since, there are hiccups at the moment
 //#[custom_element("sfui-button")]
 impl<PMSG> Component<Msg, PMSG> for Button<PMSG>
 where
@@ -994,36 +1003,35 @@ impl<PMSG> CustomElement for Button<PMSG> {
     }
 }
 
-struct AppMsg(Msg);
-
 struct ButtonWrapApp {
-    button: Button<AppMsg>,
+    widget: Button<Msg>,
 }
 
-impl Application<AppMsg> for ButtonWrapApp {
-    fn update(&mut self, msg: AppMsg) -> Cmd<Self, AppMsg> {
-        let effects = self.button.update(msg.0);
-        let mount_attributes = self.button.attributes_for_mount();
+impl Application<Msg> for ButtonWrapApp {
+    fn update(&mut self, msg: Msg) -> Cmd<Self, Msg> {
+        let effects: Effects<Msg, Msg> = self.widget.update(msg);
+        let local_effects: Effects<Msg, ()> = effects.localize(|xmsg| xmsg);
+        let mount_attributes = self.widget.attributes_for_mount();
         Cmd::batch([
-            Cmd::from(effects.localize(AppMsg)),
+            Cmd::from(local_effects),
             Cmd::new(|program| {
                 program.update_mount_attributes(mount_attributes);
             }),
         ])
     }
 
-    fn view(&self) -> Node<AppMsg> {
-        self.button.view().map_msg(AppMsg)
+    fn view(&self) -> Node<Msg> {
+        self.widget.view()
     }
 
     fn style(&self) -> String {
-        self.button.style()
+        self.widget.style()
     }
 }
 
 #[wasm_bindgen]
 struct ButtonCustomElement {
-    program: Program<ButtonWrapApp, AppMsg>,
+    program: Program<ButtonWrapApp, Msg>,
 }
 
 #[wasm_bindgen]
@@ -1036,7 +1044,7 @@ impl ButtonCustomElement {
         Self {
             program: Program::new(
                 ButtonWrapApp {
-                    button: Button::default(),
+                    widget: Button::default(),
                 },
                 mount_node,
                 false,
@@ -1047,7 +1055,7 @@ impl ButtonCustomElement {
 
     #[wasm_bindgen(method)]
     pub fn observed_attributes() -> JsValue {
-        let attributes = Button::<AppMsg>::observed_attributes();
+        let attributes = Button::<Msg>::observed_attributes();
         JsValue::from_serde(&attributes).expect("must be serde")
     }
 
@@ -1074,7 +1082,7 @@ impl ButtonCustomElement {
             .app
             .borrow_mut()
             .deref_mut()
-            .button
+            .widget
             .attributes_changed(attribute_values);
     }
 

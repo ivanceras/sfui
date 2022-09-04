@@ -258,13 +258,6 @@ where
                     self.view_corners(),
                     div(
                         [],
-                        /*
-                        if let Some(content) = &self.content {
-                            vec![content.clone().map_msg(Msg::External)]
-                        } else {
-                            vec![]
-                        },
-                        */
                         content.into_iter().map(|node| node.map_msg(Msg::External)),
                     ),
                 ],
