@@ -1032,7 +1032,6 @@ impl ButtonCustomElement {
     #[wasm_bindgen(constructor)]
     pub fn new(node: JsValue) -> Self {
         use sauron::wasm_bindgen::JsCast;
-        log::info!("constructor..");
         let mount_node: &web_sys::Node = node.unchecked_ref();
         Self {
             program: Program::new(
