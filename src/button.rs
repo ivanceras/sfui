@@ -1021,7 +1021,7 @@ impl Application<Msg> for ButtonWrapApp {
 }
 
 #[wasm_bindgen]
-struct ButtonCustomElement {
+pub struct ButtonCustomElement {
     program: Program<ButtonWrapApp, Msg>,
 }
 
@@ -1043,13 +1043,13 @@ impl ButtonCustomElement {
         }
     }
 
-    #[wasm_bindgen(method)]
+    #[wasm_bindgen(getter, static_method_of = Self, js_name = observedAttributes)]
     pub fn observed_attributes() -> JsValue {
         let attributes = Button::<Msg>::observed_attributes();
         JsValue::from_serde(&attributes).expect("must be serde")
     }
 
-    #[wasm_bindgen(method)]
+    #[wasm_bindgen(method, js_name = attributeChangedCallback)]
     pub fn attribute_changed_callback(&self) {
         use sauron::wasm_bindgen::JsCast;
         use std::ops::DerefMut;
@@ -1074,7 +1074,7 @@ impl ButtonCustomElement {
             .attributes_changed(attribute_values);
     }
 
-    #[wasm_bindgen(method)]
+    #[wasm_bindgen(method, js_name = connectedCallback)]
     pub fn connected_callback(&mut self) {
         use std::ops::Deref;
         self.program.mount();
@@ -1083,9 +1083,10 @@ impl ButtonCustomElement {
         self.program.update_dom();
     }
 
-    #[wasm_bindgen(method)]
+    #[wasm_bindgen(method, js_name = disconnectedCallback)]
     pub fn disconnected_callback(&mut self) {}
-    #[wasm_bindgen(method)]
+
+    #[wasm_bindgen(method, js_name = adoptedCallback)]
     pub fn adopted_callback(&mut self) {}
 }
 
