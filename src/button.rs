@@ -994,35 +994,9 @@ impl<PMSG> CustomElement for Button<PMSG> {
     }
 }
 
-struct ButtonWrapApp {
-    widget: Button<Msg>,
-}
-
-impl Application<Msg> for ButtonWrapApp {
-    fn update(&mut self, msg: Msg) -> Cmd<Self, Msg> {
-        let effects: Effects<Msg, Msg> = self.widget.update(msg);
-        let local_effects: Effects<Msg, ()> = effects.localize(|xmsg| xmsg);
-        let mount_attributes = self.widget.attributes_for_mount();
-        Cmd::batch([
-            Cmd::from(local_effects),
-            Cmd::new(|program| {
-                program.update_mount_attributes(mount_attributes);
-            }),
-        ])
-    }
-
-    fn view(&self) -> Node<Msg> {
-        self.widget.view()
-    }
-
-    fn style(&self) -> String {
-        self.widget.style()
-    }
-}
-
 #[wasm_bindgen]
 pub struct ButtonCustomElement {
-    program: Program<ButtonWrapApp, Msg>,
+    program: Program<Button<()>, Msg>,
 }
 
 #[wasm_bindgen]
@@ -1032,20 +1006,13 @@ impl ButtonCustomElement {
         use sauron::wasm_bindgen::JsCast;
         let mount_node: &web_sys::Node = node.unchecked_ref();
         Self {
-            program: Program::new(
-                ButtonWrapApp {
-                    widget: Button::default(),
-                },
-                mount_node,
-                false,
-                true,
-            ),
+            program: Program::new(Button::<()>::default(), mount_node, false, true),
         }
     }
 
     #[wasm_bindgen(getter, static_method_of = Self, js_name = observedAttributes)]
     pub fn observed_attributes() -> JsValue {
-        let attributes = Button::<Msg>::observed_attributes();
+        let attributes = Button::<()>::observed_attributes();
         JsValue::from_serde(&attributes).expect("must be serde")
     }
 
@@ -1070,7 +1037,6 @@ impl ButtonCustomElement {
             .app
             .borrow_mut()
             .deref_mut()
-            .widget
             .attributes_changed(attribute_values);
     }
 
@@ -1078,7 +1044,7 @@ impl ButtonCustomElement {
     pub fn connected_callback(&mut self) {
         use std::ops::Deref;
         self.program.mount();
-        let component_style = self.program.app.borrow().style();
+        let component_style = <Button<()> as Application<Msg>>::style(&self.program.app.borrow());
         self.program.inject_style_to_mount(&component_style);
         self.program.update_dom();
     }

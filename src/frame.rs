@@ -188,7 +188,7 @@ where
 }
 
 //#[custom_element("sfui-frame")]
-impl<PMSG> Container<Msg<PMSG>, PMSG> for Frame<PMSG>
+impl<PMSG> Component<Msg<PMSG>, PMSG> for Frame<PMSG>
 where
     PMSG: 'static,
 {
@@ -218,7 +218,7 @@ where
         }
     }
 
-    fn view(&self, content: impl IntoIterator<Item = Node<PMSG>>) -> Node<Msg<PMSG>> {
+    fn view(&self /* content: impl IntoIterator<Item = Node<PMSG>>*/) -> Node<Msg<PMSG>> {
         let class_ns = |class_names| attributes::class_namespaced(COMPONENT_NAME, class_names);
 
         let classes_ns_flag = |class_name_flags| {
@@ -258,7 +258,7 @@ where
                     self.view_corners(),
                     div(
                         [],
-                        content.into_iter().map(|node| node.map_msg(Msg::External)),
+                        [], //content.into_iter().map(|node| node.map_msg(Msg::External)),
                     ),
                 ],
             )],
@@ -749,37 +749,6 @@ impl Default for Feature {
     }
 }
 
-struct AppMsg(Box<Msg<AppMsg>>);
-
-struct FrameWrapApp {
-    widget: Frame<AppMsg>,
-}
-
-impl Application<AppMsg> for FrameWrapApp {
-    fn update(&mut self, msg: AppMsg) -> Cmd<Self, AppMsg> {
-        use std::ops::Deref;
-
-        let effects = self.widget.update(*msg.0);
-        let mount_attributes = self.widget.attributes_for_mount();
-        Cmd::batch([
-            Cmd::from(effects.localize(|wmsg| AppMsg(Box::new(wmsg)))),
-            Cmd::new(|program| {
-                program.update_mount_attributes(mount_attributes);
-            }),
-        ])
-    }
-
-    fn view(&self) -> Node<AppMsg> {
-        self.widget
-            .view([text("This is a children node")])
-            .map_msg(|wmsg| AppMsg(Box::new(wmsg)))
-    }
-
-    fn style(&self) -> String {
-        self.widget.style()
-    }
-}
-
 impl<PMSG> CustomElement for Frame<PMSG> {
     /// what attributes this component is interested in
     fn observed_attributes() -> Vec<&'static str> {
@@ -818,7 +787,7 @@ impl<PMSG> CustomElement for Frame<PMSG> {
 
 #[wasm_bindgen]
 pub struct FrameCustomElement {
-    program: Program<FrameWrapApp, AppMsg>,
+    program: Program<Frame<()>, Msg<()>>,
 }
 
 #[wasm_bindgen]
@@ -831,14 +800,7 @@ impl FrameCustomElement {
         let outer_html = element_node.outer_html();
         log::debug!("outer html: {:#?}", outer_html);
         Self {
-            program: Program::new(
-                FrameWrapApp {
-                    widget: Frame::default(),
-                },
-                mount_node,
-                false,
-                true,
-            ),
+            program: Program::new(Frame::<()>::default(), mount_node, false, true),
         }
     }
 
@@ -869,7 +831,6 @@ impl FrameCustomElement {
             .app
             .borrow_mut()
             .deref_mut()
-            .widget
             .attributes_changed(attribute_values);
     }
 
@@ -877,7 +838,8 @@ impl FrameCustomElement {
     pub fn connected_callback(&mut self) {
         use std::ops::Deref;
         self.program.mount();
-        let component_style = self.program.app.borrow().style();
+        let component_style =
+            <Frame<()> as Application<Msg<()>>>::style(&self.program.app.borrow());
         self.program.inject_style_to_mount(&component_style);
         self.program.update_dom();
     }
