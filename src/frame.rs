@@ -188,7 +188,7 @@ where
 }
 
 //#[custom_element("sfui-frame")]
-impl<PMSG> Component<Msg<PMSG>, PMSG> for Frame<PMSG>
+impl<PMSG> Container<Msg<PMSG>, PMSG> for Frame<PMSG>
 where
     PMSG: 'static,
 {
@@ -218,7 +218,7 @@ where
         }
     }
 
-    fn view(&self /* content: impl IntoIterator<Item = Node<PMSG>>*/) -> Node<Msg<PMSG>> {
+    fn view(&self, content: impl IntoIterator<Item = Node<PMSG>>) -> Node<Msg<PMSG>> {
         let class_ns = |class_names| attributes::class_namespaced(COMPONENT_NAME, class_names);
 
         let classes_ns_flag = |class_name_flags| {
@@ -258,7 +258,7 @@ where
                     self.view_corners(),
                     div(
                         [],
-                        [], //content.into_iter().map(|node| node.map_msg(Msg::External)),
+                        content.into_iter().map(|node| node.map_msg(Msg::External)),
                     ),
                 ],
             )],
