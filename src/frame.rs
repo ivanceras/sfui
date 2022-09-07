@@ -26,6 +26,7 @@ pub enum Msg<PMSG> {
     HoverOut,
     HighlightEnd,
     External(PMSG),
+    ContentTargetMounted(web_sys::Node),
 }
 
 #[derive(Debug)]
@@ -40,7 +41,8 @@ pub struct Frame<PMSG> {
     theme: Theme,
     /// the status of the button which changes the color pallet of the button
     status: Option<Status>,
-    content: Option<Node<PMSG>>,
+    children: Vec<Node<PMSG>>,
+    content_target_node: Option<web_sys::Node>,
 }
 
 #[derive(Debug)]
@@ -101,7 +103,8 @@ where
             height: None,
             theme: Theme::default(),
             status: None,
-            content: None,
+            children: vec![],
+            content_target_node: None,
         }
     }
 }
@@ -115,11 +118,6 @@ where
             label: label.to_string(),
             ..Default::default()
         }
-    }
-
-    pub fn with_content(mut self, content: Node<PMSG>) -> Self {
-        self.content = Some(content);
-        self
     }
 
     fn computed_width(&self) -> usize {
@@ -215,6 +213,11 @@ where
                 Effects::none()
             }
             Msg::External(xmsg) => Effects::with_external([xmsg]),
+            Msg::ContentTargetMounted(target_node) => {
+                log::debug!("target node is now mounted..");
+                self.content_target_node = Some(target_node);
+                Effects::none()
+            }
         }
     }
 
@@ -257,12 +260,19 @@ where
                     // corners
                     self.view_corners(),
                     div(
-                        [],
-                        content.into_iter().map(|node| node.map_msg(Msg::External)),
+                        [on_mount(|me| Msg::ContentTargetMounted(me.target_node))],
+                        content
+                            .into_iter()
+                            .chain(self.children.clone().into_iter())
+                            .map(|node| node.map_msg(Msg::External)),
                     ),
                 ],
             )],
         )
+    }
+
+    fn append_child(&mut self, child: Node<PMSG>) {
+        self.children.push(child)
     }
 
     fn style(&self) -> String {
@@ -788,19 +798,34 @@ impl<PMSG> CustomElement for Frame<PMSG> {
 #[wasm_bindgen]
 pub struct FrameCustomElement {
     program: Program<Frame<()>, Msg<()>>,
+    children: Vec<web_sys::Node>,
+}
+
+fn extract_children_nodes(node: &web_sys::Node) -> Vec<web_sys::Node> {
+    let node_list = node.child_nodes();
+    let children_len = node_list.length() as usize;
+    (0..children_len)
+        .into_iter()
+        .map(|i| node_list.item(i as u32).expect("must have an item"))
+        .collect()
 }
 
 #[wasm_bindgen]
 impl FrameCustomElement {
     #[wasm_bindgen(constructor)]
     pub fn new(node: JsValue) -> Self {
+        log::info!("in constructor..");
         use sauron::wasm_bindgen::JsCast;
+
         let element_node: &web_sys::Element = node.unchecked_ref();
         let mount_node: &web_sys::Node = node.unchecked_ref();
+        let children = extract_children_nodes(mount_node);
+        log::info!("children: {:#?}", children);
         let outer_html = element_node.outer_html();
         log::debug!("outer html: {:#?}", outer_html);
         Self {
             program: Program::new(Frame::<()>::default(), mount_node, false, true),
+            children,
         }
     }
 
@@ -814,6 +839,8 @@ impl FrameCustomElement {
     pub fn attribute_changed_callback(&self) {
         use sauron::wasm_bindgen::JsCast;
         use std::ops::DerefMut;
+
+        log::debug!("attreibute changed callback");
         let mount_node = self.program.mount_node();
         let mount_element: &web_sys::Element = mount_node.unchecked_ref();
         let attribute_names = mount_element.get_attribute_names();
@@ -837,11 +864,46 @@ impl FrameCustomElement {
     #[wasm_bindgen(method, js_name = connectedCallback)]
     pub fn connected_callback(&mut self) {
         use std::ops::Deref;
+
+        log::info!("connected callback..");
         self.program.mount();
         let component_style =
             <Frame<()> as Application<Msg<()>>>::style(&self.program.app.borrow());
         self.program.inject_style_to_mount(&component_style);
         self.program.update_dom();
+        self.append_children_to_shadow_mount();
+    }
+
+    //TODO: the best time to append the children to the shadown target mount
+    //it to wait for the content target node to be mounted
+    //once mounted, we mount this objects
+    //
+    // We can add a target_mount event listener to the frame
+    // and the callback calls this append_children_to_shadow_mount
+    fn append_children_to_shadow_mount(&self) {
+        let mount_element: web_sys::Element = self.program.mount_node().unchecked_into();
+        let mount_shadow = mount_element.shadow_root().expect("must have a shadow");
+        let mount_shadow_node: &web_sys::Node = mount_shadow.unchecked_ref();
+        for child in self.children.iter() {
+            /*
+            let target_node = self
+                .program
+                .app
+                .borrow()
+                .content_target_node
+                .as_ref()
+                .unwrap_or_else(|| {
+                    let message = "must have a target node";
+                    log::error!("{}", message);
+                    panic!("{}", message);
+                })
+                .append_child(child)
+                .expect("must append child");
+            */
+            mount_shadow_node
+                .append_child(child)
+                .expect("must append child..");
+        }
     }
 
     #[wasm_bindgen(method, js_name = disconnectedCallback)]
@@ -849,6 +911,16 @@ impl FrameCustomElement {
 
     #[wasm_bindgen(method, js_name = adoptedCallback)]
     pub fn adopted_callback(&mut self) {}
+
+    #[wasm_bindgen(method, js_name = appendChild)]
+    pub fn append_child(&mut self, child: JsValue) {
+        use sauron::wasm_bindgen::JsCast;
+
+        let child_node: web_sys::Node = child.unchecked_into();
+        log::info!("a child is being appended: {:?}", child_node);
+        log::info!("a child is being appended: {:?}", child_node.text_content());
+        self.children.push(child_node);
+    }
 }
 
 pub fn register() {

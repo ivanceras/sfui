@@ -10,3 +10,4 @@ crate-type = ["cdylib"]
 sfui =  { path = "../../" }
 console_log = { version = "0.2", features = ["color"] }
 log = "0.4"
+console_error_panic_hook = "0.1.7"

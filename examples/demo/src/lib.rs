@@ -78,8 +78,10 @@ impl Application<Msg> for App {
                 )]).map_msg(|fmsg|Msg::FrameMsg(Box::new(fmsg)))}
                 <sfui-frame
                     theme-primary=&self.theme.primary_color
-                    theme-background=&self.theme.background_color
-                    >"This are the content of sfui-frame!!"</sfui-frame>
+                    theme-background=&self.theme.background_color>
+                        <span>"This are the content of sfui-frame!!"</span>
+                        <div>"This ia kid in a div"</div>
+                    </sfui-frame>
             </div>
         }
     }
@@ -109,6 +111,8 @@ impl Application<Msg> for App {
 #[wasm_bindgen(start)]
 pub fn main() {
     console_log::init_with_level(log::Level::Trace).unwrap();
+    console_error_panic_hook::set_once();
+
     sfui::register_all();
     let container = sauron::document()
         .query_selector(".container")
