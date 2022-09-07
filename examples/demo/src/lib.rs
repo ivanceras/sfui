@@ -14,6 +14,7 @@ struct App {
     theme: Theme,
     button: Button<Msg>,
     frame: Frame<Msg>,
+    btn_frame: Frame<Msg>,
 }
 
 impl App {
@@ -25,6 +26,7 @@ impl App {
             button: Button::with_label("This is a long label with some other labels")
                 .with_theme(theme.clone()),
             frame: Frame::default().with_theme(theme.clone()),
+            btn_frame: Frame::default().with_theme(theme.clone()),
         }
     }
 }
@@ -69,13 +71,27 @@ impl Application<Msg> for App {
                         }
                     }
                 </div>
-                {self.frame.view([img(
-                    [
-                        src("./assets/moon.jpg"),
-                        style! {display:"block", width: px(500)},
-                    ],
-                    [],
-                )]).map_msg(|fmsg|Msg::FrameMsg(Box::new(fmsg)))}
+                <div>
+                    {self.frame.view([img(
+                        [
+                            src("./assets/moon.jpg"),
+                            style! {display:"block", width: px(500)},
+                        ],
+                        [],
+                    )]).map_msg(|fmsg|Msg::FrameMsg(Box::new(fmsg)))}
+                </div>
+                <div>
+                    {self.btn_frame.view([
+                        node!{
+                            <sfui-button label="Framed button"
+                                feature="chipped"
+                                status="none"
+                                theme-primary=&self.theme.primary_color
+                                theme-background=&self.theme.background_color
+                                on_click=|_|Msg::HelloClick/>
+                        }
+                    ]).map_msg(|fmsg|Msg::FrameMsg(Box::new(fmsg)))}
+                </div>
                 <sfui-frame
                     theme-primary=&self.theme.primary_color
                     theme-background=&self.theme.background_color>
