@@ -24,7 +24,7 @@ impl App {
             theme: theme.clone(),
             button: Button::with_label("This is a long label with some other labels")
                 .with_theme(theme.clone()),
-            frame: Frame::with_label("A frame").with_theme(theme.clone()),
+            frame: Frame::default().with_theme(theme.clone()),
         }
     }
 }

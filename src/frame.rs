@@ -16,8 +16,8 @@ use web_sys::HtmlAudioElement;
 use web_sys::MouseEvent;
 
 const COMPONENT_NAME: &str = "sfui-frame";
-const DEFAULT_CHIPPED_BUTTON_WIDTH: usize = 100;
-const DEFAULT_CHIPPED_BUTTON_HEIGHT: usize = 40;
+const DEFAULT_WIDTH: usize = 100;
+const DEFAULT_HEIGHT: usize = 40;
 
 #[derive(Clone, Debug)]
 pub enum Msg<PMSG> {
@@ -32,7 +32,6 @@ pub enum Msg<PMSG> {
 #[derive(Debug)]
 pub struct Frame<PMSG> {
     feature: Feature,
-    label: String,
     clicked: bool,
     hovered: bool,
     click_listeners: Vec<Callback<MouseEvent, PMSG>>,
@@ -97,7 +96,6 @@ where
             feature: Feature::default(),
             clicked: false,
             hovered: false,
-            label: "Frame".to_string(),
             click_listeners: vec![],
             width: None,
             height: None,
@@ -113,22 +111,12 @@ impl<PMSG> Frame<PMSG>
 where
     PMSG: 'static,
 {
-    pub fn with_label(label: &str) -> Self {
-        Self {
-            label: label.to_string(),
-            ..Default::default()
-        }
-    }
-
     fn computed_width(&self) -> usize {
         // use the supplied width if it is specified
         if let Some(width) = self.width {
             width
         } else {
-            // otherwise calculate it
-            let font_width = 10;
-            let label_width = self.label.len() * font_width;
-            std::cmp::max(DEFAULT_CHIPPED_BUTTON_WIDTH, label_width)
+            DEFAULT_WIDTH
         }
     }
 
@@ -136,7 +124,7 @@ where
         if let Some(height) = self.height {
             height
         } else {
-            DEFAULT_CHIPPED_BUTTON_HEIGHT
+            DEFAULT_HEIGHT
         }
     }
 
@@ -762,20 +750,13 @@ impl Default for Feature {
 impl<PMSG> CustomElement for Frame<PMSG> {
     /// what attributes this component is interested in
     fn observed_attributes() -> Vec<&'static str> {
-        vec![
-            "label",
-            "theme-primary",
-            "theme-background",
-            "feature",
-            "status",
-        ]
+        vec!["theme-primary", "theme-background", "feature", "status"]
     }
 
     /// called when any of the attributes in observed_attributes is changed
     fn attributes_changed(&mut self, attributes_values: BTreeMap<String, String>) {
         for (attribute, value) in attributes_values {
             match attribute.as_ref() {
-                "label" => self.label = value,
                 "theme-primary" => {
                     let primary = &value;
                     let background = &self.theme.background_color;
