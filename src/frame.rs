@@ -20,27 +20,27 @@ const DEFAULT_WIDTH: usize = 100;
 const DEFAULT_HEIGHT: usize = 40;
 
 #[derive(Clone, Debug)]
-pub enum Msg<PMSG> {
+pub enum Msg<XMSG> {
     Click(MouseEvent),
     HoverIn,
     HoverOut,
     HighlightEnd,
-    External(PMSG),
+    External(XMSG),
     ContentTargetMounted(web_sys::Node),
 }
 
 #[derive(Debug)]
-pub struct Frame<PMSG> {
+pub struct Frame<XMSG> {
     feature: Feature,
     clicked: bool,
     hovered: bool,
-    click_listeners: Vec<Callback<MouseEvent, PMSG>>,
+    click_listeners: Vec<Callback<MouseEvent, XMSG>>,
     width: Option<usize>,
     height: Option<usize>,
     theme: Theme,
     /// the status of the button which changes the color pallet of the button
     status: Option<Status>,
-    children: Vec<Node<PMSG>>,
+    children: Vec<Node<XMSG>>,
     content_target_node: Option<web_sys::Node>,
 }
 
@@ -87,9 +87,9 @@ impl Dimension {
     }
 }
 
-impl<PMSG> Default for Frame<PMSG>
+impl<XMSG> Default for Frame<XMSG>
 where
-    PMSG: 'static,
+    XMSG: 'static,
 {
     fn default() -> Self {
         Self {
@@ -107,9 +107,9 @@ where
     }
 }
 
-impl<PMSG> Frame<PMSG>
+impl<XMSG> Frame<XMSG>
 where
-    PMSG: 'static,
+    XMSG: 'static,
 {
     fn computed_width(&self) -> usize {
         // use the supplied width if it is specified
@@ -128,7 +128,7 @@ where
         }
     }
 
-    fn view_borders(&self) -> Node<Msg<PMSG>> {
+    fn view_borders(&self) -> Node<Msg<XMSG>> {
         let class_ns = |class_names| attributes::class_namespaced(COMPONENT_NAME, class_names);
         node_list([
             view_if(
@@ -150,7 +150,7 @@ where
         ])
     }
 
-    fn view_corners(&self) -> Node<Msg<PMSG>> {
+    fn view_corners(&self) -> Node<Msg<XMSG>> {
         let class_ns = |class_names| attributes::class_namespaced(COMPONENT_NAME, class_names);
         node_list([
             view_if(
@@ -174,11 +174,11 @@ where
 }
 
 //#[custom_element("sfui-frame")]
-impl<PMSG> Container<Msg<PMSG>, PMSG> for Frame<PMSG>
+impl<XMSG> Container<Msg<XMSG>, XMSG> for Frame<XMSG>
 where
-    PMSG: 'static,
+    XMSG: 'static,
 {
-    fn update(&mut self, msg: Msg<PMSG>) -> Effects<Msg<PMSG>, PMSG> {
+    fn update(&mut self, msg: Msg<XMSG>) -> Effects<Msg<XMSG>, XMSG> {
         match msg {
             Msg::Click(mouse_event) => {
                 self.clicked = true;
@@ -209,7 +209,7 @@ where
         }
     }
 
-    fn view(&self, content: impl IntoIterator<Item = Node<PMSG>>) -> Node<Msg<PMSG>> {
+    fn view(&self, content: impl IntoIterator<Item = Node<XMSG>>) -> Node<Msg<XMSG>> {
         let class_ns = |class_names| attributes::class_namespaced(COMPONENT_NAME, class_names);
 
         let classes_ns_flag = |class_name_flags| {
@@ -259,7 +259,7 @@ where
         )
     }
 
-    fn append_child(&mut self, child: Node<PMSG>) {
+    fn append_child(&mut self, child: Node<XMSG>) {
         self.children.push(child)
     }
 
@@ -535,9 +535,9 @@ where
     }
 }
 
-impl<PMSG> Frame<PMSG>
+impl<XMSG> Frame<XMSG>
 where
-    PMSG: 'static,
+    XMSG: 'static,
 {
     pub fn with_options(mut self, feature: Feature) -> Self {
         self.feature = feature;
@@ -551,7 +551,7 @@ where
 
     pub fn add_click_listener<F>(mut self, f: F) -> Self
     where
-        F: Fn(MouseEvent) -> PMSG + 'static,
+        F: Fn(MouseEvent) -> XMSG + 'static,
     {
         let cb = Callback::from(f);
         self.click_listeners.push(cb);
@@ -747,7 +747,7 @@ impl Default for Feature {
     }
 }
 
-impl<PMSG> CustomElement for Frame<PMSG> {
+impl<XMSG> CustomElement for Frame<XMSG> {
     /// what attributes this component is interested in
     fn observed_attributes() -> Vec<&'static str> {
         vec!["theme-primary", "theme-background", "feature", "status"]

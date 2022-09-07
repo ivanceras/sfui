@@ -30,14 +30,14 @@ pub enum Msg {
 }
 
 #[derive(Debug)]
-pub struct Button<PMSG> {
+pub struct Button<XMSG> {
     click_audio_src: String,
     click_audio: Option<HtmlAudioElement>,
     feature: Feature,
     label: String,
     clicked: bool,
     hovered: bool,
-    click_listeners: Vec<Callback<MouseEvent, PMSG>>,
+    click_listeners: Vec<Callback<MouseEvent, XMSG>>,
     width: Option<usize>,
     height: Option<usize>,
     theme: Theme,
@@ -70,9 +70,9 @@ pub struct Feature {
     pub chipped: bool,
 }
 
-impl<PMSG> Default for Button<PMSG>
+impl<XMSG> Default for Button<XMSG>
 where
-    PMSG: 'static,
+    XMSG: 'static,
 {
     fn default() -> Self {
         Self {
@@ -91,9 +91,9 @@ where
     }
 }
 
-impl<PMSG> Button<PMSG>
+impl<XMSG> Button<XMSG>
 where
-    PMSG: 'static,
+    XMSG: 'static,
 {
     pub fn with_label(label: &str) -> Self {
         Self {
@@ -291,11 +291,11 @@ where
 // Note: we are not using the custom element macro yet
 // since, there are hiccups at the moment
 //#[custom_element("sfui-button")]
-impl<PMSG> Component<Msg, PMSG> for Button<PMSG>
+impl<XMSG> Component<Msg, XMSG> for Button<XMSG>
 where
-    PMSG: 'static,
+    XMSG: 'static,
 {
-    fn update(&mut self, msg: Msg) -> Effects<Msg, PMSG> {
+    fn update(&mut self, msg: Msg) -> Effects<Msg, XMSG> {
         match msg {
             Msg::Click(mouse_event) => {
                 self.clicked = true;
@@ -670,9 +670,9 @@ where
     }
 }
 
-impl<PMSG> Button<PMSG>
+impl<XMSG> Button<XMSG>
 where
-    PMSG: 'static,
+    XMSG: 'static,
 {
     pub fn with_options(mut self, feature: Feature) -> Self {
         self.feature = feature;
@@ -686,7 +686,7 @@ where
 
     pub fn add_click_listener<F>(mut self, f: F) -> Self
     where
-        F: Fn(MouseEvent) -> PMSG + 'static,
+        F: Fn(MouseEvent) -> XMSG + 'static,
     {
         let cb = Callback::from(f);
         self.click_listeners.push(cb);
@@ -949,7 +949,7 @@ impl Feature {
     }
 }
 
-impl<PMSG> CustomElement for Button<PMSG> {
+impl<XMSG> CustomElement for Button<XMSG> {
     /// what attributes this component is interested in
     fn observed_attributes() -> Vec<&'static str> {
         vec![
