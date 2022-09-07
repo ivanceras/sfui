@@ -29,6 +29,12 @@ pub enum Msg<XMSG> {
     ContentTargetMounted(web_sys::Node),
 }
 
+impl<XMSG> From<XMSG> for Msg<XMSG> {
+    fn from(xmsg: XMSG) -> Self {
+        Msg::External(xmsg)
+    }
+}
+
 #[derive(Debug)]
 pub struct Frame<XMSG> {
     feature: Feature,
@@ -252,7 +258,7 @@ where
                         content
                             .into_iter()
                             .chain(self.children.clone().into_iter())
-                            .map(|node| node.map_msg(Msg::External)),
+                            .map(|node| node.map_msg(|xmsg| Msg::from(xmsg))),
                     ),
                 ],
             )],
