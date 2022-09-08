@@ -6,13 +6,11 @@ use sauron::wasm_bindgen::JsCast;
 use sauron::{
     dom::Callback,
     html::attributes,
-    html::{attributes::class, div, events::on_click, text},
+    html::{attributes::class, div, events::on_click},
     prelude::*,
     Node,
 };
 use std::collections::BTreeMap;
-use wasm_bindgen_futures::JsFuture;
-use web_sys::HtmlAudioElement;
 use web_sys::MouseEvent;
 
 const COMPONENT_NAME: &str = "sfui-frame";
@@ -48,6 +46,7 @@ pub struct Frame<XMSG> {
     status: Option<Status>,
     children: Vec<Node<XMSG>>,
     content_target_node: Option<web_sys::Node>,
+    dimension: Dimension,
 }
 
 #[derive(Debug)]
@@ -64,13 +63,14 @@ pub struct Feature {
     pub has_corner_box_shadow: bool,
 }
 
+#[derive(Debug, Clone)]
 pub struct Dimension {
     /// width of the corner clip of this button
-    pub corner_width: usize,
+    pub corner_width: i32,
     /// lengths of the corner clip of this button
-    pub corner_length: usize,
+    pub corner_length: i32,
     /// distance that clips at the corner expands when the button is hovered
-    pub corner_expand_distance: usize,
+    pub corner_expand_distance: i32,
 }
 
 impl Default for Dimension {
@@ -109,6 +109,7 @@ where
             status: None,
             children: vec![],
             content_target_node: None,
+            dimension: Dimension::default(),
         }
     }
 }
@@ -117,6 +118,12 @@ impl<XMSG> Frame<XMSG>
 where
     XMSG: 'static,
 {
+    pub fn set_theme(&mut self, theme: Theme) {
+        self.theme = theme;
+    }
+    pub fn set_status(&mut self, status: Status) {
+        self.status = Some(status);
+    }
     fn computed_width(&self) -> usize {
         // use the supplied width if it is specified
         if let Some(width) = self.width {
@@ -124,6 +131,10 @@ where
         } else {
             DEFAULT_WIDTH
         }
+    }
+
+    pub fn set_dimension(&mut self, dimension: Dimension) {
+        self.dimension = dimension;
     }
 
     fn computed_height(&self) -> usize {
@@ -645,10 +656,13 @@ where
     fn corner_style(&self) -> String {
         let theme = &self.theme;
         let base = &theme.controls;
-        let transition_time_ms = self.transition_time_ms(); //transition time for most effects on the button
-        let corner_width = 4; // width of the corner clip of this button
-        let corner_length = 16; // lengths of the corner clip of this button
-        let corner_expand_distance = 12; // distance that clips at the corner expands when the button is hovered
+        let transition_time_ms = self.transition_time_ms();
+
+        let Dimension {
+            corner_width,
+            corner_length,
+            corner_expand_distance,
+        } = self.dimension;
 
         jss_ns_pretty! {COMPONENT_NAME,
             // CORNERS - the fancy divs which clips the button
@@ -746,7 +760,7 @@ impl Default for Feature {
         Self {
             click_highlights: true,
             has_corners: true,
-            has_borders: false,
+            has_borders: true,
             expand_corners: true,
             has_corner_box_shadow: false,
         }
@@ -850,8 +864,6 @@ impl FrameCustomElement {
 
     #[wasm_bindgen(method, js_name = connectedCallback)]
     pub fn connected_callback(&mut self) {
-        use std::ops::Deref;
-
         log::info!("connected callback..");
         self.program.mount();
         let component_style =

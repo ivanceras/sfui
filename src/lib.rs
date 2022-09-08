@@ -1,3 +1,4 @@
+#![deny(warnings)]
 #![recursion_limit = "256"]
 //#![feature(trace_macros)]
 
