@@ -295,7 +295,6 @@ where
                 let effects =
                     <Frame<Msg> as Container<frame::Msg<Msg>, Msg>>::update(&mut self.frame, *fmsg);
                 let (local, external) = effects.unzip();
-                log::info!("external: {:?}", external);
                 Effects::with_local(
                     local
                         .into_iter()

@@ -7,6 +7,7 @@ use sfui::Theme;
 enum Msg {
     ButtonMsg(button::Msg),
     FrameMsg(Box<frame::Msg<Msg>>),
+    BtnFrameMsg(Box<frame::Msg<Msg>>),
     HelloClick,
 }
 
@@ -90,7 +91,7 @@ impl Application<Msg> for App {
                                 theme-background=&self.theme.background_color
                                 on_click=|_|Msg::HelloClick/>
                         }
-                    ]).map_msg(|fmsg|Msg::FrameMsg(Box::new(fmsg)))}
+                    ]).map_msg(|fmsg|Msg::BtnFrameMsg(Box::new(fmsg)))}
                 </div>
                 <sfui-frame
                     theme-primary=&self.theme.primary_color
@@ -118,6 +119,10 @@ impl Application<Msg> for App {
             }
             Msg::FrameMsg(fmsg) => {
                 let effects = self.frame.update(*fmsg);
+                Cmd::from(effects.localize(|fmsg| Msg::FrameMsg(Box::new(fmsg))))
+            }
+            Msg::BtnFrameMsg(fmsg) => {
+                let effects = self.btn_frame.update(*fmsg);
                 Cmd::from(effects.localize(|fmsg| Msg::FrameMsg(Box::new(fmsg))))
             }
         }

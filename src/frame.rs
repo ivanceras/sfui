@@ -2,7 +2,6 @@ use crate::Status;
 use crate::Theme;
 use css_colors::Color;
 use sauron::jss_ns_pretty;
-use sauron::wasm_bindgen::JsCast;
 use sauron::{
     dom::Callback,
     html::attributes,
@@ -24,7 +23,7 @@ pub enum Msg<XMSG> {
     HoverOut,
     HighlightEnd,
     External(XMSG),
-    ContentTargetMounted(web_sys::Node),
+    ContentTargetMounted(MountEvent),
 }
 
 impl<XMSG> From<XMSG> for Msg<XMSG> {
@@ -39,6 +38,8 @@ pub struct Frame<XMSG> {
     clicked: bool,
     hovered: bool,
     click_listeners: Vec<Callback<MouseEvent, XMSG>>,
+    /// called when the container for the content is mounted
+    container_mounted_listeners: Vec<Callback<MountEvent, XMSG>>,
     width: Option<usize>,
     height: Option<usize>,
     theme: Theme,
@@ -103,6 +104,7 @@ where
             clicked: false,
             hovered: false,
             click_listeners: vec![],
+            container_mounted_listeners: vec![],
             width: None,
             height: None,
             theme: Theme::default(),
@@ -190,7 +192,6 @@ where
     }
 }
 
-//#[custom_element("sfui-frame")]
 impl<XMSG> Container<Msg<XMSG>, XMSG> for Frame<XMSG>
 where
     XMSG: 'static,
@@ -218,10 +219,15 @@ where
                 Effects::none()
             }
             Msg::External(xmsg) => Effects::with_external([xmsg]),
-            Msg::ContentTargetMounted(target_node) => {
-                log::debug!("target node is now mounted..");
+            Msg::ContentTargetMounted(me) => {
+                let mount_event = me.clone();
+                let target_node = me.target_node;
                 self.content_target_node = Some(target_node);
-                Effects::none()
+                let external = self
+                    .container_mounted_listeners
+                    .iter()
+                    .map(|listener| listener.emit(mount_event.clone()));
+                Effects::with_external(external)
             }
         }
     }
@@ -265,7 +271,7 @@ where
                     // corners
                     self.view_corners(),
                     div(
-                        [on_mount(|me| Msg::ContentTargetMounted(me.target_node))],
+                        [on_mount(|me| Msg::ContentTargetMounted(me))],
                         content
                             .into_iter()
                             .chain(self.children.clone().into_iter())
@@ -566,13 +572,20 @@ where
         self
     }
 
-    pub fn add_click_listener<F>(mut self, f: F) -> Self
+    pub fn add_click_listener<F>(&mut self, f: F)
     where
         F: Fn(MouseEvent) -> XMSG + 'static,
     {
         let cb = Callback::from(f);
         self.click_listeners.push(cb);
-        self
+    }
+
+    pub fn add_container_mounted_listener<F>(&mut self, f: F)
+    where
+        F: Fn(MountEvent) -> XMSG + 'static,
+    {
+        let cb = Callback::from(f);
+        self.container_mounted_listeners.push(cb);
     }
 
     ///transition time for most effects on the frame
@@ -815,15 +828,12 @@ fn extract_children_nodes(node: &web_sys::Node) -> Vec<web_sys::Node> {
 impl FrameCustomElement {
     #[wasm_bindgen(constructor)]
     pub fn new(node: JsValue) -> Self {
-        log::info!("in constructor..");
         use sauron::wasm_bindgen::JsCast;
 
         let element_node: &web_sys::Element = node.unchecked_ref();
         let mount_node: &web_sys::Node = node.unchecked_ref();
         let children = extract_children_nodes(mount_node);
-        log::info!("children: {:#?}", children);
         let outer_html = element_node.outer_html();
-        log::debug!("outer html: {:#?}", outer_html);
         Self {
             program: Program::new(Frame::<()>::default(), mount_node, false, true),
             children,
@@ -841,7 +851,6 @@ impl FrameCustomElement {
         use sauron::wasm_bindgen::JsCast;
         use std::ops::DerefMut;
 
-        log::debug!("attreibute changed callback");
         let mount_node = self.program.mount_node();
         let mount_element: &web_sys::Element = mount_node.unchecked_ref();
         let attribute_names = mount_element.get_attribute_names();
@@ -864,42 +873,26 @@ impl FrameCustomElement {
 
     #[wasm_bindgen(method, js_name = connectedCallback)]
     pub fn connected_callback(&mut self) {
-        log::info!("connected callback..");
+        use std::ops::DerefMut;
         self.program.mount();
         let component_style =
             <Frame<()> as Application<Msg<()>>>::style(&self.program.app.borrow());
         self.program.inject_style_to_mount(&component_style);
         self.program.update_dom();
-        self.append_children_to_shadow_mount();
+
+        let children: Vec<web_sys::Node> = self.children.clone();
+        self.program
+            .app
+            .borrow_mut()
+            .deref_mut()
+            .add_container_mounted_listener(move |me| {
+                Self::append_children_to_shadow_mount(me.target_node, children.clone());
+            });
     }
 
-    //TODO: the best time to append the children to the shadown target mount
-    //it to wait for the content target node to be mounted
-    //once mounted, we mount this objects
-    //
-    // We can add a target_mount event listener to the frame
-    // and the callback calls this append_children_to_shadow_mount
-    fn append_children_to_shadow_mount(&self) {
-        let mount_element: web_sys::Element = self.program.mount_node().unchecked_into();
-        let mount_shadow = mount_element.shadow_root().expect("must have a shadow");
-        let mount_shadow_node: &web_sys::Node = mount_shadow.unchecked_ref();
-        for child in self.children.iter() {
-            /*
-            let target_node = self
-                .program
-                .app
-                .borrow()
-                .content_target_node
-                .as_ref()
-                .unwrap_or_else(|| {
-                    let message = "must have a target node";
-                    log::error!("{}", message);
-                    panic!("{}", message);
-                })
-                .append_child(child)
-                .expect("must append child");
-            */
-            mount_shadow_node
+    fn append_children_to_shadow_mount(target_node: web_sys::Node, children: Vec<web_sys::Node>) {
+        for child in children.iter() {
+            target_node
                 .append_child(child)
                 .expect("must append child..");
         }
@@ -916,8 +909,6 @@ impl FrameCustomElement {
         use sauron::wasm_bindgen::JsCast;
 
         let child_node: web_sys::Node = child.unchecked_into();
-        log::info!("a child is being appended: {:?}", child_node);
-        log::info!("a child is being appended: {:?}", child_node.text_content());
         self.children.push(child_node);
     }
 }
