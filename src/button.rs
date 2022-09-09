@@ -12,6 +12,7 @@ use sauron::{
     Node,
 };
 use std::collections::BTreeMap;
+use std::str::FromStr;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::HtmlAudioElement;
 use web_sys::MouseEvent;
@@ -47,7 +48,7 @@ pub struct Button<XMSG> {
     frame: Frame<Msg>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Feature {
     pub hidden: bool,
     /// enable sound
@@ -70,6 +71,33 @@ pub struct Feature {
     pub disabled: bool,
     /// the bottom right of the button is chipped
     pub chipped: bool,
+}
+
+impl FromStr for Feature {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "regular" => Ok(Feature::regular()),
+            "skewed" => Ok(Feature::skewed()),
+            "muted" => Ok(Feature::muted()),
+            "chipped" => Ok(Feature::chipped()),
+            "simple" => Ok(Feature::simple()),
+            "disabled" => Ok(Feature::disabled()),
+            _ => Err(()),
+        }
+    }
+}
+
+impl Into<frame::Feature> for Feature {
+    fn into(self) -> frame::Feature {
+        frame::Feature {
+            has_corners: self.has_corners,
+            has_borders: self.has_borders,
+            expand_corners: self.expand_corners,
+            has_corner_box_shadow: self.has_corner_box_shadow,
+        }
+    }
 }
 
 impl<XMSG> Default for Button<XMSG>
@@ -105,6 +133,11 @@ where
             label: label.to_string(),
             ..Default::default()
         }
+    }
+
+    pub fn set_feature(&mut self, feature: Feature) {
+        self.feature = feature;
+        self.frame.set_feature(feature.into());
     }
 
     fn computed_width(&self) -> usize {
@@ -757,7 +790,10 @@ impl Feature {
     }
 }
 
-impl<XMSG> CustomElement for Button<XMSG> {
+impl<XMSG> CustomElement for Button<XMSG>
+where
+    XMSG: 'static,
+{
     /// what attributes this component is interested in
     fn observed_attributes() -> Vec<&'static str> {
         vec![
@@ -788,17 +824,13 @@ impl<XMSG> CustomElement for Button<XMSG> {
                         Theme::from_str(primary, background).expect("must be a valid theme");
                     self.set_theme(theme);
                 }
-                "feature" => match value.as_ref() {
-                    "regular" => self.feature = Feature::regular(),
-                    "skewed" => self.feature = Feature::skewed(),
-                    "muted" => self.feature = Feature::muted(),
-                    "chipped" => self.feature = Feature::chipped(),
-                    "simple" => self.feature = Feature::simple(),
-                    "disabled" => self.feature = Feature::disabled(),
-                    _ => (),
-                },
+                "feature" => {
+                    if let Ok(feature) = Feature::from_str(&value) {
+                        self.set_feature(feature);
+                    }
+                }
                 "status" => {
-                    if let Some(status) = Status::from_str(value.as_ref()) {
+                    if let Ok(status) = Status::from_str(&value) {
                         self.set_status(status);
                     }
                 }

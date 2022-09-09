@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 #[derive(Debug, Clone, Copy)]
 pub enum Status {
     Error,
@@ -15,14 +17,18 @@ impl Status {
             Status::Warning => "warning",
         }
     }
+}
 
-    pub fn from_str(class: &str) -> Option<Self> {
-        match class {
-            "error" => Some(Status::Error),
-            "success" => Some(Status::Success),
-            "info" => Some(Status::Info),
-            "warning" => Some(Status::Warning),
-            _ => None,
+impl FromStr for Status {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "error" => Ok(Status::Error),
+            "success" => Ok(Status::Success),
+            "info" => Ok(Status::Info),
+            "warning" => Ok(Status::Warning),
+            _ => Err(()),
         }
     }
 }

@@ -10,6 +10,7 @@ use sauron::{
     Node,
 };
 use std::collections::BTreeMap;
+use std::str::FromStr;
 use web_sys::MouseEvent;
 
 const COMPONENT_NAME: &str = "sfui-frame";
@@ -52,9 +53,6 @@ pub struct Frame<XMSG> {
 
 #[derive(Debug)]
 pub struct Feature {
-    /// enable click effect, which changes the background color
-    /// of the button with the highlight color
-    pub click_highlights: bool,
     /// has corners
     pub has_corners: bool,
     /// the frame has borders
@@ -123,6 +121,11 @@ where
     pub fn set_theme(&mut self, theme: Theme) {
         self.theme = theme;
     }
+
+    pub fn set_feature(&mut self, feature: Feature) {
+        self.feature = feature;
+    }
+
     pub fn set_status(&mut self, status: Status) {
         self.status = Some(status);
     }
@@ -244,7 +247,6 @@ where
                 class(COMPONENT_NAME),
                 classes_ns_flag([
                     ("clicked", self.clicked),
-                    ("click_highlights", self.feature.click_highlights),
                     ("expand_corners", self.feature.expand_corners),
                     ("has_corner_box_shadow", self.feature.has_corner_box_shadow),
                     ("hovered", self.hovered),
@@ -527,7 +529,6 @@ where
 impl Default for Feature {
     fn default() -> Self {
         Self {
-            click_highlights: true,
             has_corners: true,
             has_borders: true,
             expand_corners: true,
@@ -558,7 +559,7 @@ impl<XMSG> CustomElement for Frame<XMSG> {
                     self.theme =
                         Theme::from_str(primary, background).expect("must be a valid theme");
                 }
-                "status" => self.status = Status::from_str(value.as_ref()),
+                "status" => self.status = Status::from_str(value.as_ref()).ok(),
                 _ => (),
             }
         }

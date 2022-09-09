@@ -1,3 +1,23 @@
 # TODO
 - [X] unify the corners and borders in button and frame
     - passing the dimensions such as corner_length, width and expand_distance
+- [ ] Add variants for primary such as
+    - primary-100
+    - primary-200
+    - primary-300
+    - primary-400
+    - primary-500
+    - primary-600
+    - primary-700
+    - primary-800
+    - primary-900
+- [ ] Add variants for background such as
+    - background-100
+    - background-200
+    - background-300
+    - background-400
+    - background-500
+    - background-600
+    - background-700
+    - background-800
+    - background-900
