@@ -9,6 +9,7 @@ pub use theme::Theme;
 //std::trace_macros!(true);
 
 pub mod button;
+pub mod dice;
 pub mod frame;
 mod status;
 mod theme;

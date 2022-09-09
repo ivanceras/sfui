@@ -1,4 +1,5 @@
 use sfui::button::{self, Button};
+use sfui::dice::{self, Dice};
 use sfui::frame::{self, Frame};
 use sfui::sauron;
 use sfui::sauron::prelude::*;
@@ -8,6 +9,7 @@ enum Msg {
     ButtonMsg(button::Msg),
     FrameMsg(Box<frame::Msg<Msg>>),
     BtnFrameMsg(Box<frame::Msg<Msg>>),
+    DiceMsg(Box<dice::Msg<Msg>>),
     HelloClick,
 }
 
@@ -16,6 +18,7 @@ struct App {
     button: Button<Msg>,
     frame: Frame<Msg>,
     btn_frame: Frame<Msg>,
+    dice: Dice<Msg>,
 }
 
 impl App {
@@ -28,6 +31,7 @@ impl App {
                 .with_theme(theme.clone()),
             frame: Frame::default().with_theme(theme.clone()),
             btn_frame: Frame::default().with_theme(theme.clone()),
+            dice: Dice::new("assets/moon.jpg"),
         }
     }
 }
@@ -99,12 +103,25 @@ impl Application<Msg> for App {
                         <span>"This are the content of sfui-frame!!"</span>
                         <div>"This ia kid in a div"</div>
                     </sfui-frame>
+                <div class="dice-container">
+                { self.dice.view([
+                        img([src("assets/moon.jpg"),
+                            style! {display:"block", width: px(500)}
+                        ],[])])
+                    .map_msg(|dmsg|Msg::DiceMsg(Box::new(dmsg))) }
+                </div>
             </div>
         }
     }
 
     fn style(&self) -> String {
-        [self.theme.style(), self.button.style(), self.frame.style()].join("\n")
+        [
+            self.theme.style(),
+            self.button.style(),
+            self.frame.style(),
+            self.dice.style(),
+        ]
+        .join("\n")
     }
 
     fn update(&mut self, msg: Msg) -> Cmd<Self, Msg> {
@@ -124,6 +141,15 @@ impl Application<Msg> for App {
             Msg::BtnFrameMsg(fmsg) => {
                 let effects = self.btn_frame.update(*fmsg);
                 Cmd::from(effects.localize(|fmsg| Msg::FrameMsg(Box::new(fmsg))))
+            }
+            Msg::DiceMsg(dmsg) => {
+                let effects = self.dice.update(*dmsg);
+                let (local, external) = effects.unzip();
+                let local = local
+                    .into_iter()
+                    .map(|dmsg| Msg::DiceMsg(Box::new(dmsg)))
+                    .chain(external);
+                Cmd::from(Effects::with_local(local))
             }
         }
     }
