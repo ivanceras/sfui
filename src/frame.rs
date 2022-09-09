@@ -830,10 +830,8 @@ impl FrameCustomElement {
     pub fn new(node: JsValue) -> Self {
         use sauron::wasm_bindgen::JsCast;
 
-        let element_node: &web_sys::Element = node.unchecked_ref();
         let mount_node: &web_sys::Node = node.unchecked_ref();
         let children = extract_children_nodes(mount_node);
-        let outer_html = element_node.outer_html();
         Self {
             program: Program::new(Frame::<()>::default(), mount_node, false, true),
             children,
