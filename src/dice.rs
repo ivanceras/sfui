@@ -1,10 +1,12 @@
 use crate::Theme;
+use sauron::wasm_bindgen::JsCast;
 use sauron::{
     html::{attributes, div},
     jss_ns,
     prelude::*,
     Node,
 };
+use wasm_bindgen_futures::JsFuture;
 use web_sys::HtmlAudioElement;
 
 const COMPONENT_NAME: &str = "sfui-dice";
@@ -15,11 +17,11 @@ pub enum Msg<XMSG> {
     StopAnimation,
     NextAnimation(f64, f64),
     External(XMSG),
+    ContainerMounted(MountEvent),
+    AudioMounted(web_sys::Node),
 }
 
 pub struct Properties {
-    width: f32,
-    height: f32,
     //slice_size size should be square
     slice_size: f32,
     gap: f32,
@@ -33,6 +35,8 @@ pub struct Dice<XMSG> {
     is_animating: bool,
     theme: Theme,
     limit: usize,
+    width: Option<f32>,
+    height: Option<f32>,
 }
 
 impl<XMSG> Dice<XMSG>
@@ -40,17 +44,10 @@ where
     XMSG: 'static,
 {
     pub fn new() -> Self {
-        let width = 500.0;
-        let height = 500.0;
         let slice_size = 40.0;
         let gap = 1.0;
 
-        let properties = Properties {
-            width,
-            height,
-            slice_size,
-            gap,
-        };
+        let properties = Properties { slice_size, gap };
 
         Dice {
             audio_src: "sounds/typing.mp3".to_string(),
@@ -60,6 +57,8 @@ where
             is_animating: false,
             theme: Theme::default(),
             limit: 0,
+            width: None,
+            height: None,
         }
     }
 
@@ -69,9 +68,8 @@ where
     ) -> Node<Msg<XMSG>> {
         let class_ns = |class_names| attributes::class_namespaced(COMPONENT_NAME, class_names);
         let mut cells = vec![];
-        let (slice_x, slice_y) = self.properties.slices();
+        let (slice_x, slice_y) = self.slices();
         let max = slice_x * slice_y;
-        //let limit = if let Some(limit) = limit { limit } else { max };
         let mut index = 0;
         let slice_size = self.properties.slice_size;
         for y in 0..slice_y {
@@ -86,7 +84,6 @@ where
                                 position: "absolute",
                                 left: px(left),
                                 top: px(top),
-                                overflow: "hidden",
                                 width: px(slice_size),
                                 height: px(slice_size),
                             },
@@ -95,7 +92,6 @@ where
                             [
                                 class_ns("slice_offset"),
                                 style! {
-                                    position: "absolute",
                                     left: px(-left),
                                     top: px(-top),
                                 },
@@ -125,8 +121,14 @@ where
                 let timeout = 500.0;
                 let duration = real_duration.min(timeout);
                 let start = sauron::now();
-
                 self.is_animating = true;
+
+                if let Some(audio) = &self.audio {
+                    let promise = audio.play().expect("must play");
+                    sauron::spawn_local(async move {
+                        JsFuture::from(promise).await.expect("must not error");
+                    });
+                }
 
                 Effects::with_local([Msg::NextAnimation(start, duration)])
             }
@@ -155,6 +157,18 @@ where
                 }
             }
             Msg::External(xmsg) => Effects::with_external(vec![xmsg]),
+            Msg::ContainerMounted(me) => {
+                let container_element: web_sys::Element = me.target_node.unchecked_into();
+                let rect = container_element.get_bounding_client_rect();
+                self.width = Some(rect.width() as f32);
+                self.height = Some(rect.height() as f32);
+                Effects::none()
+            }
+            Msg::AudioMounted(node) => {
+                let audio: HtmlAudioElement = node.unchecked_into();
+                self.audio = Some(audio);
+                Effects::none()
+            }
         }
     }
 
@@ -178,9 +192,15 @@ where
                 class(COMPONENT_NAME),
                 classes_ns_flag([("animating", self.is_animating)]),
                 on_click(|_| Msg::AnimateIn),
-                //on_mouseout(|_| Msg::AnimateIn),
             ],
             [
+                audio(
+                    [
+                        on_mount(|me| Msg::AudioMounted(me.target_node)),
+                        src(&self.audio_src),
+                    ],
+                    [],
+                ),
                 div(
                     [class("effect")],
                     if let Some(content_effect) = content_effect {
@@ -190,11 +210,14 @@ where
                     },
                 ),
                 div(
-                    [if self.is_animating {
-                        style! { visibility: "hidden" }
-                    } else {
-                        empty_attr()
-                    }],
+                    [
+                        on_mount(|me| Msg::ContainerMounted(me)),
+                        if self.is_animating {
+                            style! { visibility: "hidden" }
+                        } else {
+                            empty_attr()
+                        },
+                    ],
                     content_node,
                 ),
             ],
@@ -209,11 +232,37 @@ where
 }
 
 impl Properties {
+    fn style(&self, theme: &crate::Theme) -> String {
+        jss_ns! {COMPONENT_NAME,
+            ".": {
+                display: "block",
+                position: "relative",
+            },
+            ".effects_slices": {
+                display: "block",
+                position: "relative",
+            },
+            ".animating .img": {
+                opacity: 0,
+            },
+            ".slice": {
+                position: "absolute",
+                overflow: "hidden",
+            },
+            ".slice_offset" : {
+                position: "absolute",
+            }
+        }
+    }
+}
+
+impl<XMSG> Dice<XMSG> {
     /// slices on x and slices on y
     fn slices(&self) -> (usize, usize) {
+        let prop = &self.properties;
         (
-            (self.width / (self.slice_size + self.gap)).round() as usize,
-            (self.height / (self.slice_size + self.gap)).round() as usize,
+            (self.computed_width() / (prop.slice_size + prop.gap)).round() as usize,
+            (self.computed_height() / (prop.slice_size + prop.gap)).round() as usize,
         )
     }
 
@@ -222,34 +271,19 @@ impl Properties {
         w * h
     }
 
-    fn style(&self, theme: &crate::Theme) -> String {
-        jss_ns! {COMPONENT_NAME,
-            ".": {
-                display: "inline-block",
-                width: px(self.width),
-                height: px(self.height),
-                position: "relative",
-            },
-            ".effects_slices": {
-                display: "inline-block",
-                width: px(self.width),
-                height: px(self.height),
-                position: "relative",
-            },
-            ".animating .img": {
-                opacity: 0,
-            },
-            ".slice": {
-                  width: px(self.slice_size),
-                  height: px(self.slice_size),
-                  position: "absolute",
-            }
+    fn computed_width(&self) -> f32 {
+        if let Some(width) = self.width {
+            width
+        } else {
+            0.0
         }
     }
-}
 
-impl<XMSG> Dice<XMSG> {
-    fn content_len(&self) -> usize {
-        self.properties.content_len()
+    fn computed_height(&self) -> f32 {
+        if let Some(height) = self.height {
+            height
+        } else {
+            0.0
+        }
     }
 }
