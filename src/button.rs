@@ -18,8 +18,8 @@ use web_sys::HtmlAudioElement;
 use web_sys::MouseEvent;
 
 const COMPONENT_NAME: &str = "sfui-button";
-const DEFAULT_CHIPPED_BUTTON_WIDTH: usize = 100;
-const DEFAULT_CHIPPED_BUTTON_HEIGHT: usize = 40;
+const DEFAULT_CHIPPED_BUTTON_WIDTH: i32 = 100;
+const DEFAULT_CHIPPED_BUTTON_HEIGHT: i32 = 40;
 
 #[derive(Clone, Debug)]
 pub enum Msg {
@@ -40,8 +40,8 @@ pub struct Button<XMSG> {
     clicked: bool,
     hovered: bool,
     click_listeners: Vec<Callback<MouseEvent, XMSG>>,
-    width: Option<usize>,
-    height: Option<usize>,
+    width: Option<i32>,
+    height: Option<i32>,
     theme: Theme,
     /// the status of the button which changes the color pallet of the button
     status: Option<Status>,
@@ -140,19 +140,19 @@ where
         self.frame.set_feature(feature.into());
     }
 
-    fn computed_width(&self) -> usize {
+    fn computed_width(&self) -> i32 {
         // use the supplied width if it is specified
         if let Some(width) = self.width {
             width
         } else {
             // otherwise calculate it
             let font_width = 10;
-            let label_width = self.label.len() * font_width;
+            let label_width = self.label.len() as i32 * font_width;
             std::cmp::max(DEFAULT_CHIPPED_BUTTON_WIDTH, label_width)
         }
     }
 
-    fn computed_height(&self) -> usize {
+    fn computed_height(&self) -> i32 {
         if let Some(height) = self.height {
             height
         } else {
@@ -810,6 +810,8 @@ where
         for (attribute, value) in attributes_values {
             match attribute.as_ref() {
                 "label" => self.label = value,
+                "width" => self.width = <i32>::from_str(&value).ok(),
+                "height" => self.height = <i32>::from_str(&value).ok(),
                 "theme-primary" => {
                     let primary = &value;
                     let background = &self.theme.background_color;
