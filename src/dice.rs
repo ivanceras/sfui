@@ -18,7 +18,6 @@ pub enum Msg<XMSG> {
 }
 
 pub struct Properties {
-    url: String,
     width: f32,
     height: f32,
     //slice_size size should be square
@@ -32,15 +31,17 @@ pub struct Dice<XMSG> {
     click_listeners: Vec<Callback<MouseEvent, XMSG>>,
     properties: Properties,
     is_animating: bool,
-    content_effect: Option<Node<Msg<XMSG>>>,
     theme: Theme,
+    limit: usize,
 }
 
-impl<XMSG> Dice<XMSG> {
-    pub fn new(url: impl ToString) -> Self {
-        log::info!("url: {}", url.to_string());
-        let width = 1000.0;
-        let height = 600.0;
+impl<XMSG> Dice<XMSG>
+where
+    XMSG: 'static,
+{
+    pub fn new() -> Self {
+        let width = 500.0;
+        let height = 500.0;
         let slice_size = 40.0;
         let gap = 1.0;
 
@@ -49,7 +50,6 @@ impl<XMSG> Dice<XMSG> {
             height,
             slice_size,
             gap,
-            url: url.to_string(),
         };
 
         Dice {
@@ -58,33 +58,50 @@ impl<XMSG> Dice<XMSG> {
             click_listeners: vec![],
             properties,
             is_animating: false,
-            content_effect: None,
             theme: Theme::default(),
+            limit: 0,
         }
     }
 
-    fn slice_view(&self, limit: Option<usize>) -> Node<Msg<XMSG>> {
+    fn slice_view(
+        &self,
+        content: impl IntoIterator<Item = Node<Msg<XMSG>>> + Clone,
+    ) -> Node<Msg<XMSG>> {
         let class_ns = |class_names| attributes::class_namespaced(COMPONENT_NAME, class_names);
         let mut cells = vec![];
         let (slice_x, slice_y) = self.properties.slices();
         let max = slice_x * slice_y;
-        let limit = if let Some(limit) = limit { limit } else { max };
+        //let limit = if let Some(limit) = limit { limit } else { max };
         let mut index = 0;
+        let slice_size = self.properties.slice_size;
         for y in 0..slice_y {
             let top = (self.properties.slice_size + self.properties.gap) * y as f32;
             for x in 0..slice_x {
-                if index < limit {
+                if index < self.limit {
                     let left = (self.properties.slice_size + self.properties.gap) * x as f32;
                     let cell = div(
                         [
                             class_ns("slice"),
                             style! {
+                                position: "absolute",
                                 left: px(left),
                                 top: px(top),
-                                background_position: format!("{} {}", px(-left), px(-top)),
+                                overflow: "hidden",
+                                width: px(slice_size),
+                                height: px(slice_size),
                             },
                         ],
-                        [],
+                        [div(
+                            [
+                                class_ns("slice_offset"),
+                                style! {
+                                    position: "absolute",
+                                    left: px(-left),
+                                    top: px(-top),
+                                },
+                            ],
+                            content.clone(),
+                        )],
                     );
                     cells.push(cell);
                 }
@@ -115,7 +132,6 @@ where
             }
             Msg::StopAnimation => {
                 self.is_animating = false;
-                self.content_effect = None;
                 Effects::none()
             }
             Msg::NextAnimation(start, duration) => {
@@ -128,12 +144,11 @@ where
 
                 let content_len = self.content_len();
                 // how many of the slice that are already rendered
-                let limit = (anim_progress * content_len as f64 / duration).round() as usize;
+                self.limit = (anim_progress * content_len as f64 / duration).round() as usize;
 
-                let continue_animation = limit <= content_len - 1;
+                let continue_animation = self.limit <= content_len - 1;
 
                 if continue_animation {
-                    self.content_effect = Some(self.slice_view(Some(limit)));
                     Effects::with_local([Msg::NextAnimation(start, duration)])
                 } else {
                     Effects::with_local([Msg::StopAnimation])
@@ -152,6 +167,12 @@ where
             .map(|node| node.map_msg(Msg::External))
             .collect::<Vec<_>>();
 
+        let content_effect = if self.is_animating {
+            Some(self.slice_view(content_node.clone()))
+        } else {
+            None
+        };
+
         div(
             [
                 class(COMPONENT_NAME),
@@ -162,14 +183,14 @@ where
             [
                 div(
                     [class("effect")],
-                    if let Some(content_effect) = &self.content_effect {
-                        vec![content_effect.clone()]
+                    if let Some(content_effect) = content_effect {
+                        vec![content_effect]
                     } else {
                         vec![]
                     },
                 ),
                 div(
-                    [if self.content_effect.is_some() {
+                    [if self.is_animating {
                         style! { visibility: "hidden" }
                     } else {
                         empty_attr()
@@ -215,16 +236,6 @@ impl Properties {
                 height: px(self.height),
                 position: "relative",
             },
-            ".img": {
-                width: px(self.width),
-                height: px(self.height),
-                position: "relative",
-                opacity: 1,
-                background_size: format!("{} {}", px(self.width), px(self.height)),
-                background_image: format!("linear-gradient({} 0, {} 25%, {} 75%, {} 100%), url({})"
-                        ,theme.background_color, theme.primary_color, theme.accent_color, theme.background_color, self.url),
-                background_blend_mode: "color",
-            },
             ".animating .img": {
                 opacity: 0,
             },
@@ -232,12 +243,6 @@ impl Properties {
                   width: px(self.slice_size),
                   height: px(self.slice_size),
                   position: "absolute",
-                  background_size: format!("{} {}", px(self.width), px(self.height)),
-                  background_image: format!("linear-gradient({} 0, {} 25%, {} 75%, {} 100%), url({})"
-                      ,theme.background_color, theme.primary_color, theme.accent_color, theme.background_color, self.url),
-                  background_repeat:"no-repeat no-repeat",
-                  background_attachment: "local, local",
-                  background_blend_mode: "color",
             }
         }
     }

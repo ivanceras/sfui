@@ -31,7 +31,7 @@ impl App {
                 .with_theme(theme.clone()),
             frame: Frame::default().with_theme(theme.clone()),
             btn_frame: Frame::default().with_theme(theme.clone()),
-            dice: Dice::new("assets/moon.jpg"),
+            dice: Dice::new(),
         }
     }
 }
@@ -106,7 +106,7 @@ impl Application<Msg> for App {
                 <div class="dice-container">
                 { self.dice.view([
                         img([src("assets/moon.jpg"),
-                            style! {display:"block", width: px(500)}
+                            style! {display:"block", width: px(500), height: px(500)}
                         ],[])])
                     .map_msg(|dmsg|Msg::DiceMsg(Box::new(dmsg))) }
                 </div>
