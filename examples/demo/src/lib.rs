@@ -107,7 +107,8 @@ impl Application<Msg> for App {
                 { self.dice.view([
                         img([src("assets/moon.jpg"),
                             style! {display:"block", width: px(500), height: px(500)}
-                        ],[])])
+                        ],[])
+                        ])
                     .map_msg(|dmsg|Msg::DiceMsg(Box::new(dmsg))) }
                 </div>
             </div>
