@@ -19,7 +19,7 @@ use web_sys::MouseEvent;
 
 const COMPONENT_NAME: &str = "sfui-button";
 const DEFAULT_CHIPPED_BUTTON_WIDTH: i32 = 100;
-const DEFAULT_CHIPPED_BUTTON_HEIGHT: i32 = 40;
+const DEFAULT_CHIPPED_BUTTON_HEIGHT: i32 = 35;
 
 #[derive(Clone, Debug)]
 pub enum Msg {
@@ -29,6 +29,7 @@ pub enum Msg {
     HighlightEnd,
     ClickAudioMounted(web_sys::Node),
     FrameMsg(Box<frame::Msg<Msg>>),
+    ChippedButtonMounted(MountEvent),
 }
 
 #[derive(Debug)]
@@ -46,6 +47,10 @@ pub struct Button<XMSG> {
     /// the status of the button which changes the color pallet of the button
     status: Option<Status>,
     frame: Frame<Msg>,
+    chipped_button: Option<web_sys::Element>,
+    /// used by chipped_button
+    button_width: Option<f32>,
+    button_height: Option<f32>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -120,6 +125,9 @@ where
             theme: Theme::default(),
             status: None,
             frame,
+            chipped_button: None,
+            button_width: None,
+            button_height: None,
         }
     }
 }
@@ -157,6 +165,22 @@ where
             height
         } else {
             DEFAULT_CHIPPED_BUTTON_HEIGHT
+        }
+    }
+
+    fn button_width(&self) -> f32 {
+        if let Some(button_width) = self.button_width {
+            button_width
+        } else {
+            self.computed_width() as f32
+        }
+    }
+
+    fn button_height(&self) -> f32 {
+        if let Some(button_height) = self.button_height {
+            button_height
+        } else {
+            self.computed_height() as f32
         }
     }
 
@@ -212,6 +236,7 @@ where
     fn view_chipped_button(&self) -> Node<Msg> {
         let width = self.computed_width();
         let height = self.computed_height();
+
         let (chip_width, chip_height) = (20, 20);
         let (gap_x, gap_y) = if self.hovered { (8, 8) } else { (4, 4) };
         let top_left = (0, 0);
@@ -274,6 +299,7 @@ where
                         disabled(self.feature.disabled),
                         style! {width: px(width)},
                         style! {height: px(height)},
+                        on_mount(Msg::ChippedButtonMounted),
                     ],
                     [text(&self.label)],
                 ),
@@ -334,6 +360,12 @@ where
                         .map(|bmsg| Msg::FrameMsg(Box::new(bmsg)))
                         .chain(external),
                 )
+            }
+            Msg::ChippedButtonMounted(me) => {
+                let chipped_button: web_sys::Element = me.target_node.unchecked_into();
+                self.chipped_button = Some(chipped_button);
+                self.calc_button_dimension();
+                Effects::none()
             }
         }
     }
@@ -679,6 +711,14 @@ impl<XMSG> Button<XMSG> {
     pub fn set_status(&mut self, status: Status) {
         self.status = Some(status);
         self.frame.set_status(status);
+    }
+
+    fn calc_button_dimension(&mut self) {
+        if let Some(chipped_button) = &self.chipped_button {
+            let rect = chipped_button.get_bounding_client_rect();
+            self.button_width = Some(rect.width() as f32);
+            self.button_height = Some(rect.height() as f32);
+        }
     }
 }
 
