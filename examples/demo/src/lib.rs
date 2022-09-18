@@ -11,6 +11,7 @@ enum Msg {
     BtnFrameMsg(Box<frame::Msg<Msg>>),
     DiceMsg(Box<dice::Msg<Msg>>),
     HelloClick,
+    InStructButtonClick,
 }
 
 struct App {
@@ -23,12 +24,14 @@ struct App {
 
 impl App {
     fn new() -> Self {
-        //let theme = Theme::green_on_black();
         let theme = Theme::black_on_white();
+        let mut button = Button::with_label("This is a long label with some other labels")
+            .with_theme(theme.clone());
+        button.add_click_listener(|me| Msg::InStructButtonClick);
+
         App {
             theme: theme.clone(),
-            button: Button::with_label("This is a long label with some other labels")
-                .with_theme(theme.clone()),
+            button,
             frame: Frame::default().with_theme(theme.clone()),
             btn_frame: Frame::default().with_theme(theme.clone()),
             dice: Dice::new(),
@@ -163,6 +166,12 @@ impl Application<Msg> for App {
                     .map(|dmsg| Msg::DiceMsg(Box::new(dmsg)))
                     .chain(external);
                 Cmd::from(Effects::with_local(local))
+            }
+            Msg::InStructButtonClick => {
+                log::info!(
+                    "You clicked on the button instance that is attached to the App struct!"
+                );
+                Cmd::none()
             }
         }
     }
