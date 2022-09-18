@@ -70,18 +70,38 @@ where
         let mut cells = vec![];
         let (slice_x, slice_y) = self.slices();
         let max = slice_x * slice_y;
+        log::debug!(
+            "computed_width: {}x{}",
+            self.computed_width(),
+            self.computed_height()
+        );
+        log::info!("slice_x: {}, slice_y: {}", slice_x, slice_y);
+        log::info!("max slices: {}", max);
         let mut index = 0;
         let slice_size = self.properties.slice_size;
+        log::info!("limit: {}", self.limit);
         for y in 0..slice_y {
             let top = (self.properties.slice_size + self.properties.gap) * y as f32;
             for x in 0..slice_x {
-                if index < self.limit {
+                let border = if index < self.limit {
+                    "1px solid red"
+                } else {
+                    "1px solid green"
+                };
+                let visibility = if index < self.limit {
+                    "visible"
+                } else {
+                    "hidden"
+                };
+                {
                     let left = (self.properties.slice_size + self.properties.gap) * x as f32;
                     let cell = div(
                         [
                             class_ns("slice"),
                             style! {
                                 position: "absolute",
+                                border: border,
+                                visibility: visibility,
                                 left: px(left),
                                 top: px(top),
                                 width: px(slice_size),
@@ -134,6 +154,7 @@ where
             }
             Msg::StopAnimation => {
                 self.is_animating = false;
+                self.limit = 0;
                 Effects::none()
             }
             Msg::NextAnimation(start, duration) => {
@@ -147,6 +168,11 @@ where
                 let content_len = self.content_len();
                 // how many of the slice that are already rendered
                 self.limit = (anim_progress * content_len as f64 / duration).round() as usize;
+                log::info!(
+                    "next animation limit: {}, timestamp: {}",
+                    self.limit,
+                    timestamp
+                );
 
                 let continue_animation = self.limit <= content_len - 1;
 
@@ -159,6 +185,9 @@ where
             Msg::External(xmsg) => Effects::with_external(vec![xmsg]),
             Msg::ContainerMounted(me) => {
                 let container_element: web_sys::Element = me.target_node.unchecked_into();
+                //TODO: this is not accurately computing the container
+                //dimension, maybe because of the container not included the overflow of the
+                //content
                 let rect = container_element.get_bounding_client_rect();
                 self.width = Some(rect.width() as f32);
                 self.height = Some(rect.height() as f32);
@@ -176,6 +205,7 @@ where
         let classes_ns_flag = |class_name_flags| {
             attributes::classes_flag_namespaced(COMPONENT_NAME, class_name_flags)
         };
+        let class_ns = |class_names| attributes::class_namespaced(COMPONENT_NAME, class_names);
         let content_node = content
             .into_iter()
             .map(|node| node.map_msg(Msg::External))
@@ -202,7 +232,7 @@ where
                     [],
                 ),
                 div(
-                    [class("effect")],
+                    [class_ns("effect")],
                     if let Some(content_effect) = content_effect {
                         vec![content_effect]
                     } else {
@@ -211,6 +241,7 @@ where
                 ),
                 div(
                     [
+                        class_ns("container"),
                         on_mount(|me| Msg::ContainerMounted(me)),
                         if self.is_animating {
                             style! { visibility: "hidden" }
@@ -235,7 +266,7 @@ impl Properties {
     fn style(&self, theme: &crate::Theme) -> String {
         jss_ns! {COMPONENT_NAME,
             ".": {
-                display: "block",
+                display: "inline-block",
                 position: "relative",
             },
             ".effects_slices": {
@@ -251,6 +282,17 @@ impl Properties {
             },
             ".slice_offset" : {
                 position: "absolute",
+            },
+            /*
+            ".effect": {
+                display: "block",
+                overflow: "hidden",
+            },
+            */
+
+            ".container": {
+                display: "inline-block",
+                overflow: "hidden",
             }
         }
     }

@@ -19,7 +19,7 @@ use web_sys::MouseEvent;
 
 const COMPONENT_NAME: &str = "sfui-button";
 const DEFAULT_CHIPPED_BUTTON_WIDTH: i32 = 100;
-const DEFAULT_CHIPPED_BUTTON_HEIGHT: i32 = 35;
+const DEFAULT_CHIPPED_BUTTON_HEIGHT: i32 = 40;
 
 #[derive(Clone, Debug)]
 pub enum Msg {
@@ -736,13 +736,12 @@ where
         self
     }
 
-    pub fn add_click_listener<F>(mut self, f: F) -> Self
+    pub fn add_click_listener<F>(&mut self, f: F)
     where
         F: Fn(MouseEvent) -> XMSG + 'static,
     {
         let cb = Callback::from(f);
         self.click_listeners.push(cb);
-        self
     }
 
     ///transition time for most effects on the button

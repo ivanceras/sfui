@@ -39,6 +39,7 @@ impl App {
 impl Application<Msg> for App {
     fn view(&self) -> Node<Msg> {
         let label = "Hello!";
+        let label = "The quick brown fox jumps over the lazy dog!";
         let make_button = |label, feature, status| {
             node! {
                 <div {style!{display:"block"}}>
@@ -77,6 +78,7 @@ impl Application<Msg> for App {
                     }
                 </div>
                 <div>
+                /*
                     {self.frame.view([img(
                         [
                             src("./assets/moon.jpg"),
@@ -84,8 +86,10 @@ impl Application<Msg> for App {
                         ],
                         [],
                     )]).map_msg(|fmsg|Msg::FrameMsg(Box::new(fmsg)))}
+                */
                 </div>
                 <div>
+                /*
                     {self.btn_frame.view([
                         self.dice.view([
                             img([src("assets/moon.jpg"),
@@ -94,6 +98,7 @@ impl Application<Msg> for App {
                             ])
                         .map_msg(|dmsg|Msg::DiceMsg(Box::new(dmsg)))
                      ]).map_msg(|fmsg|Msg::BtnFrameMsg(Box::new(fmsg)))}
+                */
                 </div>
                 <sfui-frame
                     theme-primary=&self.theme.primary_color
@@ -106,7 +111,16 @@ impl Application<Msg> for App {
                             img([src("assets/moon.jpg"),
                                 style! {display:"block", width: px(500), height: px(500)}
                             ],[])
-                            ])
+                            /*
+                        {self.frame.view([img(
+                            [
+                                src("./assets/moon.jpg"),
+                                style! {display:"block", width: px(500), height: px(500)},
+                            ],
+                            [],
+                        )]).map_msg(|fmsg|Msg::FrameMsg(Box::new(fmsg)))}
+                        */
+                        ])
                         .map_msg(|dmsg|Msg::DiceMsg(Box::new(dmsg))) }
                 </div>
             </div>

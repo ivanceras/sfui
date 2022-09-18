@@ -5,7 +5,8 @@ edition = "2021"
 
 
 [dependencies]
-sauron = { path ="../sauron", features = ["with-measure"]}
+#sauron = { path ="../sauron", features = ["with-measure"]}
+sauron = { git = "https://github.com/ivanceras/sauron", branch="reusable-components" features = ["with-measure"]}
 log = "0.4"
 css-colors = "1" # for using lighten, and darken when calculating theme colors
 css-color = "0.1.1" #for parsing hex color into rgb, don't get mix with css-colors with a `s`
@@ -20,3 +21,7 @@ features = [
 
 [workspace]
 members = ["examples/*"]
+
+[[bin]]
+name = "demo"
+path = "examples/demo"
