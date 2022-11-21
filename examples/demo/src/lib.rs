@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use sfui::button::{self, Button};
 use sfui::dice::{self, Dice};
 use sfui::frame::{self, Frame};
@@ -39,6 +40,7 @@ impl App {
     }
 }
 
+#[async_trait(?Send)]
 impl Application<Msg> for App {
     fn view(&self) -> Node<Msg> {
         let label = "Hello!";
@@ -140,26 +142,26 @@ impl Application<Msg> for App {
         .join("\n")
     }
 
-    fn update(&mut self, msg: Msg) -> Cmd<Self, Msg> {
+    async fn update(&mut self, msg: Msg) -> Cmd<Self, Msg> {
         match msg {
             Msg::HelloClick => {
                 log::info!("Somebody clicked on the hello button..");
                 Cmd::none()
             }
             Msg::ButtonMsg(bmsg) => {
-                let effects = self.button.update(bmsg);
+                let effects = self.button.update(bmsg).await;
                 Cmd::from(effects.localize(Msg::ButtonMsg))
             }
             Msg::FrameMsg(fmsg) => {
-                let effects = self.frame.update(*fmsg);
+                let effects = self.frame.update(*fmsg).await;
                 Cmd::from(effects.localize(|fmsg| Msg::FrameMsg(Box::new(fmsg))))
             }
             Msg::BtnFrameMsg(fmsg) => {
-                let effects = self.btn_frame.update(*fmsg);
+                let effects = self.btn_frame.update(*fmsg).await;
                 Cmd::from(effects.localize(|fmsg| Msg::FrameMsg(Box::new(fmsg))))
             }
             Msg::DiceMsg(dmsg) => {
-                let effects = self.dice.update(*dmsg);
+                let effects = self.dice.update(*dmsg).await;
                 let (local, external) = effects.unzip();
                 let local = local
                     .into_iter()

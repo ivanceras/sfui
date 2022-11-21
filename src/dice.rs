@@ -1,4 +1,5 @@
 use crate::Theme;
+use async_trait::async_trait;
 use sauron::wasm_bindgen::JsCast;
 use sauron::{
     html::{attributes, div},
@@ -128,11 +129,12 @@ where
     }
 }
 
+#[async_trait(?Send)]
 impl<XMSG> Container<Msg<XMSG>, XMSG> for Dice<XMSG>
 where
     XMSG: 'static,
 {
-    fn update(&mut self, msg: Msg<XMSG>) -> Effects<Msg<XMSG>, XMSG> {
+    async fn update(&mut self, msg: Msg<XMSG>) -> Effects<Msg<XMSG>, XMSG> {
         match msg {
             Msg::AnimateIn => {
                 log::info!("starting the animation");

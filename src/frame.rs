@@ -1,5 +1,6 @@
 use crate::Status;
 use crate::Theme;
+use async_trait::async_trait;
 use css_colors::Color;
 use sauron::jss_ns_pretty;
 use sauron::{
@@ -195,11 +196,12 @@ where
     }
 }
 
+#[async_trait(?Send)]
 impl<XMSG> Container<Msg<XMSG>, XMSG> for Frame<XMSG>
 where
     XMSG: 'static,
 {
-    fn update(&mut self, msg: Msg<XMSG>) -> Effects<Msg<XMSG>, XMSG> {
+    async fn update(&mut self, msg: Msg<XMSG>) -> Effects<Msg<XMSG>, XMSG> {
         match msg {
             Msg::Click(mouse_event) => {
                 self.clicked = true;
@@ -620,9 +622,10 @@ impl FrameCustomElement {
             }
         }
         self.program
-            .app
+            .app_wrap
             .borrow_mut()
             .deref_mut()
+            .app
             .attributes_changed(attribute_values);
     }
 
@@ -631,15 +634,16 @@ impl FrameCustomElement {
         use std::ops::DerefMut;
         self.program.mount();
         let component_style =
-            <Frame<()> as Application<Msg<()>>>::style(&self.program.app.borrow());
+            <Frame<()> as Application<Msg<()>>>::style(&self.program.app_wrap.borrow().app);
         self.program.inject_style_to_mount(&component_style);
         self.program.update_dom();
 
         let children: Vec<web_sys::Node> = self.children.clone();
         self.program
-            .app
+            .app_wrap
             .borrow_mut()
             .deref_mut()
+            .app
             .add_container_mounted_listener(move |me| {
                 Self::append_children_to_shadow_mount(me.target_node, children.clone());
             });

@@ -5,12 +5,13 @@ edition = "2021"
 
 
 [dependencies]
-#sauron = { path ="../sauron", features = ["with-measure"]}
-sauron = { git = "https://github.com/ivanceras/sauron", branch="reusable-components", features = ["with-measure"]}
+sauron = { path ="../sauron", features = ["with-measure"]}
+#sauron = { git = "https://github.com/ivanceras/sauron", branch="reusable-components", features = ["with-measure"]}
 log = "0.4"
 css-colors = "1" # for using lighten, and darken when calculating theme colors
 css-color = "0.1.1" #for parsing hex color into rgb, don't get mix with css-colors with a `s`
 wasm-bindgen-futures = "0.4.32"
+async-trait = "0.1.58"
 
 [dependencies.web-sys]
 version = "0.3"

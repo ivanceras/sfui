@@ -1,6 +1,7 @@
 use crate::frame::{self, Dimension, Frame};
 use crate::Status;
 use crate::Theme;
+use async_trait::async_trait;
 use css_colors::Color;
 use sauron::jss_ns_pretty;
 use sauron::wasm_bindgen::JsCast;
@@ -311,11 +312,12 @@ where
 // Note: we are not using the custom element macro yet
 // since, there are hiccups at the moment
 //#[custom_element("sfui-button")]
+#[async_trait(?Send)]
 impl<XMSG> Component<Msg, XMSG> for Button<XMSG>
 where
     XMSG: 'static,
 {
-    fn update(&mut self, msg: Msg) -> Effects<Msg, XMSG> {
+    async fn update(&mut self, msg: Msg) -> Effects<Msg, XMSG> {
         match msg {
             Msg::Click(mouse_event) => {
                 self.clicked = true;
@@ -352,7 +354,8 @@ where
             }
             Msg::FrameMsg(fmsg) => {
                 let effects =
-                    <Frame<Msg> as Container<frame::Msg<Msg>, Msg>>::update(&mut self.frame, *fmsg);
+                    <Frame<Msg> as Container<frame::Msg<Msg>, Msg>>::update(&mut self.frame, *fmsg)
+                        .await;
                 let (local, external) = effects.unzip();
                 Effects::with_local(
                     local
@@ -921,16 +924,18 @@ impl ButtonCustomElement {
             }
         }
         self.program
-            .app
+            .app_wrap
             .borrow_mut()
             .deref_mut()
+            .app
             .attributes_changed(attribute_values);
     }
 
     #[wasm_bindgen(method, js_name = connectedCallback)]
     pub fn connected_callback(&mut self) {
         self.program.mount();
-        let component_style = <Button<()> as Application<Msg>>::style(&self.program.app.borrow());
+        let component_style =
+            <Button<()> as Application<Msg>>::style(&self.program.app_wrap.borrow().app);
         self.program.inject_style_to_mount(&component_style);
         self.program.update_dom();
     }
