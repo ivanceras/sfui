@@ -896,7 +896,7 @@ impl ButtonCustomElement {
         use sauron::wasm_bindgen::JsCast;
         let mount_node: &web_sys::Node = node.unchecked_ref();
         Self {
-            program: Program::new(Button::<()>::default(), mount_node, false, true),
+            program: Program::new(Button::<()>::default(), mount_node, true),
         }
     }
 
@@ -924,18 +924,15 @@ impl ButtonCustomElement {
             }
         }
         self.program
-            .app_wrap
-            .borrow_mut()
-            .deref_mut()
             .app
+            .borrow_mut()
             .attributes_changed(attribute_values);
     }
 
     #[wasm_bindgen(method, js_name = connectedCallback)]
     pub fn connected_callback(&mut self) {
         self.program.mount();
-        let component_style =
-            <Button<()> as Application<Msg>>::style(&self.program.app_wrap.borrow().app);
+        let component_style = <Button<()> as Application<Msg>>::style(&self.program.app.borrow());
         self.program.inject_style_to_mount(&component_style);
         self.program.update_dom();
     }

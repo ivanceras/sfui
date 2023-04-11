@@ -592,7 +592,7 @@ impl FrameCustomElement {
         let mount_node: &web_sys::Node = node.unchecked_ref();
         let children = extract_children_nodes(mount_node);
         Self {
-            program: Program::new(Frame::<()>::default(), mount_node, false, true),
+            program: Program::new(Frame::<()>::default(), mount_node, true),
             children,
         }
     }
@@ -622,10 +622,8 @@ impl FrameCustomElement {
             }
         }
         self.program
-            .app_wrap
-            .borrow_mut()
-            .deref_mut()
             .app
+            .borrow_mut()
             .attributes_changed(attribute_values);
     }
 
@@ -634,16 +632,14 @@ impl FrameCustomElement {
         use std::ops::DerefMut;
         self.program.mount();
         let component_style =
-            <Frame<()> as Application<Msg<()>>>::style(&self.program.app_wrap.borrow().app);
+            <Frame<()> as Application<Msg<()>>>::style(&self.program.app.borrow());
         self.program.inject_style_to_mount(&component_style);
         self.program.update_dom();
 
         let children: Vec<web_sys::Node> = self.children.clone();
         self.program
-            .app_wrap
-            .borrow_mut()
-            .deref_mut()
             .app
+            .borrow_mut()
             .add_container_mounted_listener(move |me| {
                 Self::append_children_to_shadow_mount(me.target_node, children.clone());
             });

@@ -190,5 +190,5 @@ pub fn main() {
         .ok()
         .flatten()
         .expect("must have the .container in index.html");
-    Program::replace_mount(App::new(), &container);
+    Program::append_to_mount(App::new(), &container);
 }
