@@ -6,11 +6,11 @@ use css_colors::Color;
 use sauron::jss_ns_pretty;
 use sauron::wasm_bindgen::JsCast;
 use sauron::{
-    dom::Callback,
+    dom::{register_custom_element, spawn_local, Callback},
     html::attributes,
-    html::{attributes::class, div, events::on_click, text},
-    prelude::*,
-    Node,
+    html::{attributes::*, events::*, *},
+    svg::attributes::{points, preserve_aspect_ratio, view_box, xmlns},
+    *,
 };
 use std::collections::BTreeMap;
 use std::str::FromStr;
@@ -278,9 +278,9 @@ where
                 svg(
                     [
                         xmlns("http://www.w3.org/2000/svg"),
-                        preserveAspectRatio("none"),
+                        preserve_aspect_ratio("none"),
                         class_ns("chipped_svg"),
-                        viewBox([0, 0, width, height]),
+                        view_box([0, 0, width, height]),
                     ],
                     [
                         polygon(
@@ -311,20 +311,22 @@ where
 
 // Note: we are not using the custom element macro yet
 // since, there are hiccups at the moment
-//#[custom_element("sfui-button")]
-#[async_trait(?Send)]
 impl<XMSG> Component<Msg, XMSG> for Button<XMSG>
 where
     XMSG: 'static,
 {
-    async fn update(&mut self, msg: Msg) -> Effects<Msg, XMSG> {
+    fn init(&mut self) -> Vec<Task<Msg>> {
+        vec![]
+    }
+
+    fn update(&mut self, msg: Msg) -> Effects<Msg, XMSG> {
         match msg {
             Msg::Click(mouse_event) => {
                 self.clicked = true;
                 if self.feature.sound {
                     if let Some(audio) = &self.click_audio {
                         let promise = audio.play().expect("must play");
-                        sauron::spawn_local(async move {
+                        spawn_local(async move {
                             JsFuture::from(promise).await.expect("must not error");
                         });
                     }
@@ -354,8 +356,7 @@ where
             }
             Msg::FrameMsg(fmsg) => {
                 let effects =
-                    <Frame<Msg> as Container<frame::Msg<Msg>, Msg>>::update(&mut self.frame, *fmsg)
-                        .await;
+                    <Frame<Msg> as Container<frame::Msg<Msg>, Msg>>::update(&mut self.frame, *fmsg);
                 let (local, external) = effects.unzip();
                 Effects::with_local(
                     local
@@ -434,7 +435,7 @@ where
         )
     }
 
-    fn style(&self) -> String {
+    fn style(&self) -> Vec<String> {
         let theme = &self.theme;
         let base = &theme.controls;
         let transition_time_ms = self.transition_time_ms(); //transition time for most effects on the button
@@ -702,7 +703,7 @@ where
 
         };
 
-        [main, self.frame.style()].join("\n")
+        [vec![main], self.frame.style()].concat()
     }
 }
 
@@ -832,10 +833,14 @@ impl Feature {
     }
 }
 
-impl<XMSG> CustomElement for Button<XMSG>
+#[web_component]
+impl<XMSG> CustomElement<Msg> for Button<XMSG>
 where
     XMSG: 'static,
 {
+    fn custom_tag() -> &'static str {
+        "sfui-button"
+    }
     /// what attributes this component is interested in
     fn observed_attributes() -> Vec<&'static str> {
         vec![
@@ -848,102 +853,64 @@ where
     }
 
     /// called when any of the attributes in observed_attributes is changed
-    fn attributes_changed(&mut self, attributes_values: BTreeMap<String, String>) {
-        for (attribute, value) in attributes_values {
-            match attribute.as_ref() {
-                "label" => self.label = value,
-                "width" => self.width = <i32>::from_str(&value).ok(),
-                "height" => self.height = <i32>::from_str(&value).ok(),
-                "theme-primary" => {
-                    let primary = &value;
-                    let background = &self.theme.background_color;
-                    let theme =
-                        Theme::from_str(primary, background).expect("must be a valid theme");
-                    self.set_theme(theme);
+    fn attribute_changed(
+        program: &Program<Self, Msg>,
+        attr_name: &str,
+        _old_value: JsValue,
+        new_value: JsValue,
+    ) {
+        let mut app = program.app.borrow_mut();
+        match attr_name {
+            "label" => {
+                if let Some(label) = new_value.as_string() {
+                    app.label = label;
                 }
-                "theme-background" => {
-                    let background = &value;
-                    let primary = &self.theme.primary_color;
-                    let theme =
-                        Theme::from_str(primary, background).expect("must be a valid theme");
-                    self.set_theme(theme);
+            }
+            "width" => {
+                if let Some(v) = new_value.as_f64() {
+                    app.width = Some(v as i32);
                 }
-                "feature" => {
-                    if let Ok(feature) = Feature::from_str(&value) {
-                        self.set_feature(feature);
+            }
+            "height" => {
+                if let Some(v) = new_value.as_f64() {
+                    app.height = Some(v as i32);
+                }
+            }
+            "theme-primary" => {
+                if let Some(primary) = new_value.as_string() {
+                    let background = &app.theme.background_color;
+                    let theme =
+                        Theme::from_str(&primary, background).expect("must be a valid theme");
+                    app.set_theme(theme);
+                }
+            }
+            "theme-background" => {
+                if let Some(background) = new_value.as_string() {
+                    let primary = &app.theme.primary_color;
+                    let theme =
+                        Theme::from_str(primary, &background).expect("must be a valid theme");
+                    app.set_theme(theme);
+                }
+            }
+            "feature" => {
+                if let Some(v) = new_value.as_string() {
+                    if let Ok(feature) = Feature::from_str(&v) {
+                        app.set_feature(feature);
                     }
                 }
-                "status" => {
-                    if let Ok(status) = Status::from_str(&value) {
-                        self.set_status(status);
+            }
+            "status" => {
+                if let Some(v) = new_value.as_string() {
+                    if let Ok(status) = Status::from_str(&v) {
+                        app.set_status(status);
                     }
                 }
-                _ => (),
             }
-        }
-    }
-}
-
-#[wasm_bindgen]
-pub struct ButtonCustomElement {
-    program: Program<Button<()>, Msg>,
-}
-
-#[wasm_bindgen]
-impl ButtonCustomElement {
-    #[wasm_bindgen(constructor)]
-    pub fn new(node: JsValue) -> Self {
-        use sauron::wasm_bindgen::JsCast;
-        let mount_node: &web_sys::Node = node.unchecked_ref();
-        Self {
-            program: Program::new(Button::<()>::default(), mount_node, true),
+            _ => (),
         }
     }
 
-    #[wasm_bindgen(getter, static_method_of = Self, js_name = observedAttributes)]
-    pub fn observed_attributes() -> JsValue {
-        let attributes = Button::<()>::observed_attributes();
-        JsValue::from_serde(&attributes).expect("must be serde")
-    }
-
-    #[wasm_bindgen(method, js_name = attributeChangedCallback)]
-    pub fn attribute_changed_callback(&self) {
-        use sauron::wasm_bindgen::JsCast;
-        use std::ops::DerefMut;
-        let mount_node = self.program.mount_node();
-        let mount_element: &web_sys::Element = mount_node.unchecked_ref();
-        let attribute_names = mount_element.get_attribute_names();
-        let len = attribute_names.length();
-        let mut attribute_values: std::collections::BTreeMap<String, String> =
-            std::collections::BTreeMap::new();
-        for i in 0..len {
-            let name = attribute_names.get(i);
-            let attr_name = name.as_string().expect("must be a string attribute");
-            if let Some(attr_value) = mount_element.get_attribute(&attr_name) {
-                attribute_values.insert(attr_name, attr_value);
-            }
-        }
-        self.program
-            .app
-            .borrow_mut()
-            .attributes_changed(attribute_values);
-    }
-
-    #[wasm_bindgen(method, js_name = connectedCallback)]
-    pub fn connected_callback(&mut self) {
-        self.program.mount();
-        let component_style = <Button<()> as Application<Msg>>::style(&self.program.app.borrow());
-        self.program.inject_style_to_mount(&component_style);
-        self.program.update_dom();
-    }
-
-    #[wasm_bindgen(method, js_name = disconnectedCallback)]
-    pub fn disconnected_callback(&mut self) {}
-
-    #[wasm_bindgen(method, js_name = adoptedCallback)]
-    pub fn adopted_callback(&mut self) {}
-}
-
-pub fn register() {
-    sauron::register_custom_element("sfui-button", "ButtonCustomElement", "HTMLElement");
+    fn connected_callback(&mut self) {}
+    fn disconnected_callback(&mut self) {}
+    fn adopted_callback(&mut self) {}
 }

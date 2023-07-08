@@ -71,13 +71,13 @@ impl Theme {
         ))
     }
 
-    pub fn style(&self) -> String {
-        jss! {
+    pub fn style(&self) -> Vec<String> {
+        vec![jss! {
             body : {
                 background_color: self.background_color.clone(),
                 color: self.primary_color.clone(),
             }
-        }
+        }]
     }
 
     pub fn primary_color(&self) -> String {

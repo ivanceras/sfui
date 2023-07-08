@@ -97,9 +97,9 @@
         </div>
         <script type=module>
           import init, * as components from './pkg/demo.js';
-           Object.assign(window, components);
+          Object.assign(window, components);
           // we explicitly specify to load this module
-          init('./pkg/demo_bg.wasm').catch(console.error);
+          await init().catch(console.error);
         </script>
         <sfui-frame>This is in the index.html usage..</sfui-frame>
   </body>

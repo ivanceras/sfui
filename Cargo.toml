@@ -23,6 +23,3 @@ features = [
 [workspace]
 members = ["examples/*"]
 
-[[bin]]
-name = "demo"
-path = "examples/demo"

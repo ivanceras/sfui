@@ -1,6 +1,9 @@
 # TODO
 - [X] unify the corners and borders in button and frame
     - passing the dimensions such as corner_length, width and expand_distance
+- [ ] Use `getClientBoundingRect()` to calculate the button rect and use this info for the svg overlays
+    - This requires `on_mount` event for the button
+- [ ] Create button node function and its attributes as function
 - [ ] Add variants for primary such as
     - primary-100
     - primary-200

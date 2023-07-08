@@ -2,10 +2,9 @@ use crate::Theme;
 use async_trait::async_trait;
 use sauron::wasm_bindgen::JsCast;
 use sauron::{
-    html::{attributes, div},
-    jss_ns,
-    prelude::*,
-    Node,
+    dom::{spawn_local, Callback},
+    html::{attributes::*, events::*, *},
+    *,
 };
 use wasm_bindgen_futures::JsFuture;
 use web_sys::HtmlAudioElement;
@@ -129,12 +128,14 @@ where
     }
 }
 
-#[async_trait(?Send)]
 impl<XMSG> Container<Msg<XMSG>, XMSG> for Dice<XMSG>
 where
     XMSG: 'static,
 {
-    async fn update(&mut self, msg: Msg<XMSG>) -> Effects<Msg<XMSG>, XMSG> {
+    fn init(&mut self) -> Vec<Task<Msg<XMSG>>> {
+        vec![]
+    }
+    fn update(&mut self, msg: Msg<XMSG>) -> Effects<Msg<XMSG>, XMSG> {
         match msg {
             Msg::AnimateIn => {
                 log::info!("starting the animation");
@@ -147,7 +148,7 @@ where
 
                 if let Some(audio) = &self.audio {
                     let promise = audio.play().expect("must play");
-                    sauron::spawn_local(async move {
+                    spawn_local(async move {
                         JsFuture::from(promise).await.expect("must not error");
                     });
                 }
@@ -257,7 +258,7 @@ where
         )
     }
 
-    fn style(&self) -> String {
+    fn style(&self) -> Vec<String> {
         self.properties.style(&self.theme)
     }
 
@@ -265,8 +266,8 @@ where
 }
 
 impl Properties {
-    fn style(&self, theme: &crate::Theme) -> String {
-        jss_ns! {COMPONENT_NAME,
+    fn style(&self, theme: &crate::Theme) -> Vec<String> {
+        vec![jss_ns! {COMPONENT_NAME,
             ".": {
                 display: "inline-block",
                 position: "relative",
@@ -285,18 +286,12 @@ impl Properties {
             ".slice_offset" : {
                 position: "absolute",
             },
-            /*
-            ".effect": {
-                display: "block",
-                overflow: "hidden",
-            },
-            */
 
             ".container": {
                 display: "inline-block",
                 overflow: "hidden",
             }
-        }
+        }]
     }
 }
 

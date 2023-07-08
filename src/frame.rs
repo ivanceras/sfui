@@ -4,11 +4,9 @@ use async_trait::async_trait;
 use css_colors::Color;
 use sauron::jss_ns_pretty;
 use sauron::{
-    dom::Callback,
-    html::attributes,
-    html::{attributes::class, div, events::on_click},
-    prelude::*,
-    Node,
+    dom::{register_custom_element, Callback, WebComponent},
+    html::{attributes::*, events::*, *},
+    *,
 };
 use std::collections::BTreeMap;
 use std::str::FromStr;
@@ -196,12 +194,15 @@ where
     }
 }
 
-#[async_trait(?Send)]
 impl<XMSG> Container<Msg<XMSG>, XMSG> for Frame<XMSG>
 where
     XMSG: 'static,
 {
-    async fn update(&mut self, msg: Msg<XMSG>) -> Effects<Msg<XMSG>, XMSG> {
+    fn init(&mut self) -> Vec<Task<Msg<XMSG>>> {
+        vec![]
+    }
+
+    fn update(&mut self, msg: Msg<XMSG>) -> Effects<Msg<XMSG>, XMSG> {
         match msg {
             Msg::Click(mouse_event) => {
                 self.clicked = true;
@@ -290,7 +291,7 @@ where
         self.children.push(child)
     }
 
-    fn style(&self) -> String {
+    fn style(&self) -> Vec<String> {
         let theme = &self.theme;
         let base = &theme.controls;
         let transition_time_ms = self.transition_time_ms(); //transition time for most effects on the button
@@ -314,7 +315,7 @@ where
             },
         };
 
-        [main, self.border_style(), self.corner_style()].join("\n")
+        vec![main, self.border_style(), self.corner_style()]
     }
 }
 
@@ -539,38 +540,57 @@ impl Default for Feature {
     }
 }
 
-impl<XMSG> CustomElement for Frame<XMSG> {
+//TODO: web_component macro doesn't support Generic type in Msg yet
+//#[web_component]
+impl<XMSG> CustomElement<Msg<XMSG>> for Frame<XMSG> {
+    fn custom_tag() -> &'static str {
+        "sfui-frame"
+    }
     /// what attributes this component is interested in
     fn observed_attributes() -> Vec<&'static str> {
         vec!["theme-primary", "theme-background", "feature", "status"]
     }
 
     /// called when any of the attributes in observed_attributes is changed
-    fn attributes_changed(&mut self, attributes_values: BTreeMap<String, String>) {
-        for (attribute, value) in attributes_values {
-            match attribute.as_ref() {
-                "theme-primary" => {
-                    let primary = &value;
-                    let background = &self.theme.background_color;
-                    self.theme =
-                        Theme::from_str(primary, background).expect("must be a valid theme");
+    fn attribute_changed(
+        program: &Program<Self, Msg<XMSG>>,
+        attr_name: &str,
+        _old_value: JsValue,
+        new_value: JsValue,
+    ) {
+        let mut app = program.app.borrow_mut();
+        match attr_name {
+            "theme-primary" => {
+                if let Some(primary) = new_value.as_string() {
+                    let background = &app.theme.background_color;
+                    app.theme =
+                        Theme::from_str(&primary, background).expect("must be a valid theme");
                 }
-                "theme-background" => {
-                    let background = &value;
-                    let primary = &self.theme.primary_color;
-                    self.theme =
-                        Theme::from_str(primary, background).expect("must be a valid theme");
-                }
-                "status" => self.status = Status::from_str(value.as_ref()).ok(),
-                _ => (),
             }
+            "theme-background" => {
+                if let Some(background) = new_value.as_string() {
+                    let primary = &app.theme.primary_color;
+                    app.theme =
+                        Theme::from_str(primary, &background).expect("must be a valid theme");
+                }
+            }
+            "status" => {
+                if let Some(v) = new_value.as_string() {
+                    app.status = Status::from_str(&v).ok();
+                }
+            }
+            _ => (),
         }
     }
+
+    fn connected_callback(&mut self) {}
+    fn disconnected_callback(&mut self) {}
+    fn adopted_callback(&mut self) {}
 }
 
 #[wasm_bindgen]
 pub struct FrameCustomElement {
-    program: Program<Frame<()>, Msg<()>>,
+    web_component: WebComponent<Frame<()>, Msg<()>>,
     children: Vec<web_sys::Node>,
 }
 
@@ -588,11 +608,12 @@ impl FrameCustomElement {
     #[wasm_bindgen(constructor)]
     pub fn new(node: JsValue) -> Self {
         use sauron::wasm_bindgen::JsCast;
+        log::info!("new frame custom element");
 
         let mount_node: &web_sys::Node = node.unchecked_ref();
         let children = extract_children_nodes(mount_node);
         Self {
-            program: Program::new(Frame::<()>::default(), mount_node, true),
+            web_component: WebComponent::new(node),
             children,
         }
     }
@@ -604,48 +625,32 @@ impl FrameCustomElement {
     }
 
     #[wasm_bindgen(method, js_name = attributeChangedCallback)]
-    pub fn attribute_changed_callback(&self) {
-        use sauron::wasm_bindgen::JsCast;
-        use std::ops::DerefMut;
-
-        let mount_node = self.program.mount_node();
-        let mount_element: &web_sys::Element = mount_node.unchecked_ref();
-        let attribute_names = mount_element.get_attribute_names();
-        let len = attribute_names.length();
-        let mut attribute_values: std::collections::BTreeMap<String, String> =
-            std::collections::BTreeMap::new();
-        for i in 0..len {
-            let name = attribute_names.get(i);
-            let attr_name = name.as_string().expect("must be a string attribute");
-            if let Some(attr_value) = mount_element.get_attribute(&attr_name) {
-                attribute_values.insert(attr_name, attr_value);
-            }
-        }
-        self.program
-            .app
-            .borrow_mut()
-            .attributes_changed(attribute_values);
+    pub fn attribute_changed_callback(
+        &self,
+        attr_name: &str,
+        old_value: JsValue,
+        new_value: JsValue,
+    ) {
+        self.web_component
+            .attribute_changed(attr_name, old_value, new_value);
     }
 
     #[wasm_bindgen(method, js_name = connectedCallback)]
     pub fn connected_callback(&mut self) {
-        use std::ops::DerefMut;
-        self.program.mount();
-        let component_style =
-            <Frame<()> as Application<Msg<()>>>::style(&self.program.app.borrow());
-        self.program.inject_style_to_mount(&component_style);
-        self.program.update_dom();
+        log::info!("frame connected..");
+        self.web_component.connected_callback();
 
+        log::info!("adding children to frame..");
         let children: Vec<web_sys::Node> = self.children.clone();
-        self.program
+        self.web_component
+            .program
             .app
             .borrow_mut()
             .add_container_mounted_listener(move |me| {
-                Self::append_children_to_shadow_mount(me.target_node, children.clone());
+                Self::append_children_to_shadow_mount(me.target_node, &children);
             });
     }
-
-    fn append_children_to_shadow_mount(target_node: web_sys::Node, children: Vec<web_sys::Node>) {
+    fn append_children_to_shadow_mount(target_node: web_sys::Node, children: &[web_sys::Node]) {
         for child in children.iter() {
             target_node
                 .append_child(child)
@@ -669,5 +674,5 @@ impl FrameCustomElement {
 }
 
 pub fn register() {
-    sauron::register_custom_element("sfui-frame", "FrameCustomElement", "HTMLElement");
+    register_custom_element("sfui-frame", "FrameCustomElement");
 }
