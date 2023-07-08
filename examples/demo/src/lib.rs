@@ -1,4 +1,4 @@
-use async_trait::async_trait;
+#![allow(warnings)]
 use sfui::button::{self, Button};
 use sfui::dice::{self, Dice};
 use sfui::frame::{self, Frame};
@@ -31,7 +31,7 @@ impl App {
         let theme = Theme::black_on_white();
         let mut button = Button::with_label("This is a long label with some other labels")
             .with_theme(theme.clone());
-        button.add_click_listener(|me| Msg::InStructButtonClick);
+        button.add_click_listener(|_me| Msg::InStructButtonClick);
 
         App {
             theme: theme.clone(),
@@ -49,7 +49,6 @@ impl Application<Msg> for App {
     }
 
     fn view(&self) -> Node<Msg> {
-        let label = "Hello!";
         let label = "The quick brown fox jumps over the lazy dog!";
         let make_button = |label, feature, status| {
             node! {
@@ -167,13 +166,11 @@ impl Application<Msg> for App {
                 Cmd::from(effects.localize(|fmsg| Msg::FrameMsg(Box::new(fmsg))))
             }
             Msg::DiceMsg(dmsg) => {
-                let effects = self.dice.update(*dmsg);
-                let (local, external) = effects.unzip();
-                let local = local
-                    .into_iter()
-                    .map(|dmsg| Msg::DiceMsg(Box::new(dmsg)))
-                    .chain(external);
-                Cmd::from(Effects::with_local(local))
+                let effects = self
+                    .dice
+                    .update(*dmsg)
+                    .localize(|dmsg| Msg::DiceMsg(Box::new(dmsg)));
+                Cmd::from(effects)
             }
             Msg::InStructButtonClick => {
                 log::info!(

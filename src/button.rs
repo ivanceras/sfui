@@ -357,13 +357,7 @@ where
             Msg::FrameMsg(fmsg) => {
                 let effects =
                     <Frame<Msg> as Container<frame::Msg<Msg>, Msg>>::update(&mut self.frame, *fmsg);
-                let (local, external) = effects.unzip();
-                Effects::with_local(
-                    local
-                        .into_iter()
-                        .map(|bmsg| Msg::FrameMsg(Box::new(bmsg)))
-                        .chain(external),
-                )
+                effects.localize(|bmsg| Msg::FrameMsg(Box::new(bmsg)))
             }
             Msg::ChippedButtonMounted(me) => {
                 let chipped_button: web_sys::Element = me.target_node.unchecked_into();
