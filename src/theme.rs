@@ -73,7 +73,7 @@ impl Theme {
 
     pub fn style(&self) -> Vec<String> {
         vec![jss! {
-            body : {
+            "body" : {
                 background_color: self.background_color.clone(),
                 color: self.primary_color.clone(),
             }

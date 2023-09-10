@@ -2,9 +2,8 @@ use crate::Status;
 use crate::Theme;
 use async_trait::async_trait;
 use css_colors::Color;
-use sauron::jss_ns_pretty;
 use sauron::{
-    dom::{register_custom_element, Callback, WebComponent},
+    dom::{Callback, WebComponent},
     html::{attributes::*, events::*, *},
     *,
 };
@@ -150,45 +149,43 @@ where
     }
 
     fn view_borders(&self) -> Node<Msg<XMSG>> {
-        let class_ns = |class_names| attributes::class_namespaced(COMPONENT_NAME, class_names);
         node_list([
             view_if(
                 self.feature.has_borders,
-                div([class_ns("border border-left")], []),
+                div([Self::class_ns("border border-left")], []),
             ),
             view_if(
                 self.feature.has_borders,
-                div([class_ns("border border-right")], []),
+                div([Self::class_ns("border border-right")], []),
             ),
             view_if(
                 self.feature.has_borders,
-                div([class_ns("border border-top")], []),
+                div([Self::class_ns("border border-top")], []),
             ),
             view_if(
                 self.feature.has_borders,
-                div([class_ns("border border-bottom")], []),
+                div([Self::class_ns("border border-bottom")], []),
             ),
         ])
     }
 
     fn view_corners(&self) -> Node<Msg<XMSG>> {
-        let class_ns = |class_names| attributes::class_namespaced(COMPONENT_NAME, class_names);
         node_list([
             view_if(
                 self.feature.has_corners,
-                div([class_ns("corner corner__top-left")], []),
+                div([Self::class_ns("corner corner__top-left")], []),
             ),
             view_if(
                 self.feature.has_corners,
-                div([class_ns("corner corner__bottom-left")], []),
+                div([Self::class_ns("corner corner__bottom-left")], []),
             ),
             view_if(
                 self.feature.has_corners,
-                div([class_ns("corner corner__top-right")], []),
+                div([Self::class_ns("corner corner__top-right")], []),
             ),
             view_if(
                 self.feature.has_corners,
-                div([class_ns("corner corner__bottom-right")], []),
+                div([Self::class_ns("corner corner__bottom-right")], []),
             ),
         ])
     }
@@ -198,8 +195,8 @@ impl<XMSG> Container<Msg<XMSG>, XMSG> for Frame<XMSG>
 where
     XMSG: 'static,
 {
-    fn init(&mut self) -> Vec<Task<Msg<XMSG>>> {
-        vec![]
+    fn init(&mut self) -> Effects<Msg<XMSG>, XMSG> {
+        Effects::none()
     }
 
     fn update(&mut self, msg: Msg<XMSG>) -> Effects<Msg<XMSG>, XMSG> {
@@ -239,23 +236,17 @@ where
     }
 
     fn view(&self, content: impl IntoIterator<Item = Node<XMSG>>) -> Node<Msg<XMSG>> {
-        let class_ns = |class_names| attributes::class_namespaced(COMPONENT_NAME, class_names);
-
-        let classes_ns_flag = |class_name_flags| {
-            attributes::classes_flag_namespaced(COMPONENT_NAME, class_name_flags)
-        };
-
         div(
             [
                 class(COMPONENT_NAME),
-                classes_ns_flag([
+                Self::classes_ns_flag([
                     ("clicked", self.clicked),
                     ("expand_corners", self.feature.expand_corners),
                     ("has_corner_box_shadow", self.feature.has_corner_box_shadow),
                     ("hovered", self.hovered),
                 ]),
                 if let Some(ref status) = self.status {
-                    class_ns(status.class_name())
+                    Self::class_ns(status.class_name())
                 } else {
                     empty_attr()
                 },
@@ -301,7 +292,7 @@ where
         let width = self.computed_width();
         let height = self.computed_height();
 
-        let main = jss_ns_pretty! {COMPONENT_NAME,
+        let main = jss! {
             // the ROOT component style
             ".": {
                 display: "inline-block",
@@ -360,7 +351,7 @@ where
         let base = &theme.controls;
         let transition_time_ms = self.transition_time_ms(); //transition time for most effects on the button
 
-        jss_ns_pretty! {COMPONENT_NAME,
+        jss! {
             // BORDERS these are styled divs wrapping the buttons
             ".border": {
                 border_color: base.border_color.clone(),
@@ -438,7 +429,7 @@ where
             corner_expand_distance,
         } = self.dimension;
 
-        jss_ns_pretty! {COMPONENT_NAME,
+        jss! {
             // CORNERS - the fancy divs which clips the button
             ".corner": {
                 width: px(corner_length),
@@ -540,12 +531,7 @@ impl Default for Feature {
     }
 }
 
-//TODO: web_component macro doesn't support Generic type in Msg yet
-//#[web_component]
-impl<XMSG> CustomElement<Msg<XMSG>> for Frame<XMSG> {
-    fn custom_tag() -> &'static str {
-        "sfui-frame"
-    }
+impl<XMSG> WebComponent<Msg<XMSG>> for Frame<XMSG> {
     /// what attributes this component is interested in
     fn observed_attributes() -> Vec<&'static str> {
         vec!["theme-primary", "theme-background", "feature", "status"]
@@ -553,29 +539,29 @@ impl<XMSG> CustomElement<Msg<XMSG>> for Frame<XMSG> {
 
     /// called when any of the attributes in observed_attributes is changed
     fn attribute_changed(
-        program: &Program<Self, Msg<XMSG>>,
+        program: Program<Self, Msg<XMSG>>,
         attr_name: &str,
-        _old_value: JsValue,
-        new_value: JsValue,
+        _old_value: Option<String>,
+        new_value: Option<String>,
     ) {
-        let mut app = program.app.borrow_mut();
+        let mut app = program.app_mut();
         match attr_name {
             "theme-primary" => {
-                if let Some(primary) = new_value.as_string() {
+                if let Some(primary) = new_value {
                     let background = &app.theme.background_color;
                     app.theme =
                         Theme::from_str(&primary, background).expect("must be a valid theme");
                 }
             }
             "theme-background" => {
-                if let Some(background) = new_value.as_string() {
+                if let Some(background) = new_value {
                     let primary = &app.theme.primary_color;
                     app.theme =
                         Theme::from_str(primary, &background).expect("must be a valid theme");
                 }
             }
             "status" => {
-                if let Some(v) = new_value.as_string() {
+                if let Some(v) = new_value {
                     app.status = Status::from_str(&v).ok();
                 }
             }
@@ -588,12 +574,6 @@ impl<XMSG> CustomElement<Msg<XMSG>> for Frame<XMSG> {
     fn adopted_callback(&mut self) {}
 }
 
-#[wasm_bindgen]
-pub struct FrameCustomElement {
-    web_component: WebComponent<Frame<()>, Msg<()>>,
-    children: Vec<web_sys::Node>,
-}
-
 fn extract_children_nodes(node: &web_sys::Node) -> Vec<web_sys::Node> {
     let node_list = node.child_nodes();
     let children_len = node_list.length() as usize;
@@ -601,6 +581,35 @@ fn extract_children_nodes(node: &web_sys::Node) -> Vec<web_sys::Node> {
         .into_iter()
         .map(|i| node_list.item(i as u32).expect("must have an item"))
         .collect()
+}
+
+impl Application<Msg<()>> for Frame<()> {
+    fn init(&mut self) -> Cmd<Self, Msg<()>> {
+        Cmd::from(<Self as Container<Msg<()>, ()>>::init(self))
+    }
+
+    fn update(&mut self, msg: Msg<()>) -> Cmd<Self, Msg<()>> {
+        let effects = <Self as Container<Msg<()>, ()>>::update(self, msg);
+        Cmd::from(effects)
+    }
+
+    fn view(&self) -> Node<Msg<()>> {
+        <Self as Container<Msg<()>, ()>>::view(self, [])
+    }
+
+    fn stylesheet() -> Vec<String> {
+        <Self as Container<Msg<()>, ()>>::stylesheet()
+    }
+
+    fn style(&self) -> Vec<String> {
+        <Self as Container<Msg<()>, ()>>::style(self)
+    }
+}
+
+#[wasm_bindgen]
+pub struct FrameCustomElement {
+    program: Program<Frame<()>, Msg<()>>,
+    children: Vec<web_sys::Node>,
 }
 
 #[wasm_bindgen]
@@ -613,7 +622,12 @@ impl FrameCustomElement {
         let mount_node: &web_sys::Node = node.unchecked_ref();
         let children = extract_children_nodes(mount_node);
         Self {
-            web_component: WebComponent::new(node),
+            program: Program::new(
+                Frame::<()>::default(),
+                mount_node,
+                MountAction::Append,
+                MountTarget::ShadowRoot,
+            ),
             children,
         }
     }
@@ -621,7 +635,7 @@ impl FrameCustomElement {
     #[wasm_bindgen(getter, static_method_of = Self, js_name = observedAttributes)]
     pub fn observed_attributes() -> JsValue {
         let attributes = Frame::<Msg<()>>::observed_attributes();
-        JsValue::from_serde(&attributes).expect("must be serde")
+        serde_wasm_bindgen::to_value(&attributes).expect("must be serde")
     }
 
     #[wasm_bindgen(method, js_name = attributeChangedCallback)]
@@ -631,21 +645,23 @@ impl FrameCustomElement {
         old_value: JsValue,
         new_value: JsValue,
     ) {
-        self.web_component
-            .attribute_changed(attr_name, old_value, new_value);
+        Frame::<()>::attribute_changed(
+            self.program.clone(),
+            attr_name,
+            old_value.as_string(),
+            new_value.as_string(),
+        );
     }
 
     #[wasm_bindgen(method, js_name = connectedCallback)]
     pub fn connected_callback(&mut self) {
         log::info!("frame connected..");
-        self.web_component.connected_callback();
+        self.program.mount();
 
         log::info!("adding children to frame..");
         let children: Vec<web_sys::Node> = self.children.clone();
-        self.web_component
-            .program
-            .app
-            .borrow_mut()
+        self.program
+            .app_mut()
             .add_container_mounted_listener(move |me| {
                 Self::append_children_to_shadow_mount(me.target_node, &children);
             });
@@ -671,8 +687,4 @@ impl FrameCustomElement {
         let child_node: web_sys::Node = child.unchecked_into();
         self.children.push(child_node);
     }
-}
-
-pub fn register() {
-    register_custom_element("sfui-frame", "FrameCustomElement");
 }

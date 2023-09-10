@@ -66,7 +66,6 @@ where
         &self,
         content: impl IntoIterator<Item = Node<Msg<XMSG>>> + Clone,
     ) -> Node<Msg<XMSG>> {
-        let class_ns = |class_names| attributes::class_namespaced(COMPONENT_NAME, class_names);
         let mut cells = vec![];
         let (slice_x, slice_y) = self.slices();
         let max = slice_x * slice_y;
@@ -97,7 +96,7 @@ where
                     let left = (self.properties.slice_size + self.properties.gap) * x as f32;
                     let cell = div(
                         [
-                            class_ns("slice"),
+                            Self::class_ns("slice"),
                             style! {
                                 position: "absolute",
                                 border: border,
@@ -110,7 +109,7 @@ where
                         ],
                         [div(
                             [
-                                class_ns("slice_offset"),
+                                Self::class_ns("slice_offset"),
                                 style! {
                                     left: px(-left),
                                     top: px(-top),
@@ -124,7 +123,7 @@ where
                 index += 1;
             }
         }
-        div([class_ns("effects_slices")], cells)
+        div([Self::class_ns("effects_slices")], cells)
     }
 }
 
@@ -132,8 +131,8 @@ impl<XMSG> Container<Msg<XMSG>, XMSG> for Dice<XMSG>
 where
     XMSG: 'static,
 {
-    fn init(&mut self) -> Vec<Task<Msg<XMSG>>> {
-        vec![]
+    fn init(&mut self) -> Effects<Msg<XMSG>, XMSG> {
+        Effects::none()
     }
     fn update(&mut self, msg: Msg<XMSG>) -> Effects<Msg<XMSG>, XMSG> {
         match msg {
@@ -205,10 +204,6 @@ where
     }
 
     fn view(&self, content: impl IntoIterator<Item = Node<XMSG>>) -> Node<Msg<XMSG>> {
-        let classes_ns_flag = |class_name_flags| {
-            attributes::classes_flag_namespaced(COMPONENT_NAME, class_name_flags)
-        };
-        let class_ns = |class_names| attributes::class_namespaced(COMPONENT_NAME, class_names);
         let content_node = content
             .into_iter()
             .map(|node| node.map_msg(Msg::External))
@@ -223,7 +218,7 @@ where
         div(
             [
                 class(COMPONENT_NAME),
-                classes_ns_flag([("animating", self.is_animating)]),
+                Self::classes_ns_flag([("animating", self.is_animating)]),
                 on_click(|_| Msg::AnimateIn),
             ],
             [
@@ -235,7 +230,7 @@ where
                     [],
                 ),
                 div(
-                    [class_ns("effect")],
+                    [Self::class_ns("effect")],
                     if let Some(content_effect) = content_effect {
                         vec![content_effect]
                     } else {
@@ -244,7 +239,7 @@ where
                 ),
                 div(
                     [
-                        class_ns("container"),
+                        Self::class_ns("container"),
                         on_mount(|me| Msg::ContainerMounted(me)),
                         if self.is_animating {
                             style! { visibility: "hidden" }
@@ -267,7 +262,7 @@ where
 
 impl Properties {
     fn style(&self, theme: &crate::Theme) -> Vec<String> {
-        vec![jss_ns! {COMPONENT_NAME,
+        vec![jss! {
             ".": {
                 display: "inline-block",
                 position: "relative",

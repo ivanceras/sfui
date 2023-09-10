@@ -44,8 +44,8 @@ impl App {
 }
 
 impl Application<Msg> for App {
-    fn init(&mut self) -> Vec<Cmd<Self, Msg>> {
-        vec![]
+    fn init(&mut self) -> Cmd<Self, Msg> {
+        Cmd::none()
     }
 
     fn view(&self) -> Node<Msg> {
@@ -187,7 +187,6 @@ pub fn main() {
     console_log::init_with_level(log::Level::Trace).unwrap();
     console_error_panic_hook::set_once();
 
-    sfui::register_all();
     let container = sauron::document()
         .query_selector(".container")
         .ok()

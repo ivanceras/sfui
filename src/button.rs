@@ -3,10 +3,9 @@ use crate::Status;
 use crate::Theme;
 use async_trait::async_trait;
 use css_colors::Color;
-use sauron::jss_ns_pretty;
 use sauron::wasm_bindgen::JsCast;
 use sauron::{
-    dom::{register_custom_element, spawn_local, Callback},
+    dom::{spawn_local, Callback},
     html::attributes,
     html::{attributes::*, events::*, *},
     svg::attributes::{points, preserve_aspect_ratio, view_box, xmlns},
@@ -82,8 +81,8 @@ pub struct Feature {
 impl FromStr for Feature {
     type Err = ();
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
+    fn from_str(v: &str) -> Result<Self, Self::Err> {
+        match v {
             "regular" => Ok(Feature::regular()),
             "skewed" => Ok(Feature::skewed()),
             "muted" => Ok(Feature::muted()),
@@ -194,24 +193,23 @@ where
     }
 
     fn view_plain_button(&self) -> Node<Msg> {
-        let class_ns = |class_names| attributes::class_namespaced(COMPONENT_NAME, class_names);
         div(
             [],
             [
                 div(
                     [
-                        class_ns("highlight"),
+                        Self::class_ns("highlight"),
                         on_transitionend(|_| Msg::HighlightEnd),
                     ],
                     [],
                 ),
                 div(
-                    [class_ns("button_wrap")],
+                    [Self::class_ns("button_wrap")],
                     [button(
                         [
-                            class_ns("button"),
+                            Self::class_ns("button"),
                             if let Some(ref status) = self.status {
-                                class_ns(status.class_name())
+                                Self::class_ns(status.class_name())
                             } else {
                                 empty_attr()
                             },
@@ -271,32 +269,31 @@ where
             .collect::<Vec<_>>()
             .join(" ");
 
-        let class_ns = |class_names| attributes::class_namespaced(COMPONENT_NAME, class_names);
         div(
-            [class_ns("chipped_wrapper")],
+            [Self::class_ns("chipped_wrapper")],
             [
                 svg(
                     [
                         xmlns("http://www.w3.org/2000/svg"),
                         preserve_aspect_ratio("none"),
-                        class_ns("chipped_svg"),
+                        Self::class_ns("chipped_svg"),
                         view_box([0, 0, width, height]),
                     ],
                     [
                         polygon(
                             [
-                                class_ns("chipped_polygon"),
+                                Self::class_ns("chipped_polygon"),
                                 points(poly_points_str),
                                 on_transitionend(|_| Msg::HighlightEnd),
                             ],
                             [],
                         ),
-                        polygon([class_ns("triangle"), points(triangle_points)], []),
+                        polygon([Self::class_ns("triangle"), points(triangle_points)], []),
                     ],
                 ),
                 button(
                     [
-                        class_ns("chipped_button"),
+                        Self::class_ns("chipped_button"),
                         disabled(self.feature.disabled),
                         style! {width: px(width)},
                         style! {height: px(height)},
@@ -315,8 +312,8 @@ impl<XMSG> Component<Msg, XMSG> for Button<XMSG>
 where
     XMSG: 'static,
 {
-    fn init(&mut self) -> Vec<Task<Msg>> {
-        vec![]
+    fn init(&mut self) -> Effects<Msg, XMSG> {
+        Effects::none()
     }
 
     fn update(&mut self, msg: Msg) -> Effects<Msg, XMSG> {
@@ -369,16 +366,10 @@ where
     }
 
     fn view(&self) -> Node<Msg> {
-        let class_ns = |class_names| attributes::class_namespaced(COMPONENT_NAME, class_names);
-
-        let classes_ns_flag = |class_name_flags| {
-            attributes::classes_flag_namespaced(COMPONENT_NAME, class_name_flags)
-        };
-
         div(
             [
                 class(COMPONENT_NAME),
-                classes_ns_flag([
+                Self::classes_ns_flag([
                     ("clicked", self.clicked),
                     ("click_highlights", self.feature.click_highlights),
                     ("expand_corners", self.feature.expand_corners),
@@ -393,7 +384,7 @@ where
                     ("hidden", self.feature.hidden),
                 ]),
                 if let Some(ref status) = self.status {
-                    class_ns(status.class_name())
+                    Self::class_ns(status.class_name())
                 } else {
                     empty_attr()
                 },
@@ -419,7 +410,7 @@ where
                     [
                         view_if(
                             self.feature.has_underline,
-                            div([class_ns("underline underline-bottom")], []),
+                            div([Self::class_ns("underline underline-bottom")], []),
                         ),
                         self.view_button(),
                     ],
@@ -439,7 +430,7 @@ where
         let width = self.computed_width();
         let height = self.computed_height();
 
-        let main = jss_ns_pretty! {COMPONENT_NAME,
+        let main = jss! {
 
             // the ROOT component style
             ".": {
@@ -827,14 +818,11 @@ impl Feature {
     }
 }
 
-#[web_component]
-impl<XMSG> CustomElement<Msg> for Button<XMSG>
+#[custom_element("sfui-button")]
+impl<XMSG> WebComponent<Msg> for Button<XMSG>
 where
     XMSG: 'static,
 {
-    fn custom_tag() -> &'static str {
-        "sfui-button"
-    }
     /// what attributes this component is interested in
     fn observed_attributes() -> Vec<&'static str> {
         vec![
@@ -848,30 +836,34 @@ where
 
     /// called when any of the attributes in observed_attributes is changed
     fn attribute_changed(
-        program: &Program<Self, Msg>,
+        program: Program<Self, Msg>,
         attr_name: &str,
-        _old_value: JsValue,
-        new_value: JsValue,
+        _old_value: Option<String>,
+        new_value: Option<String>,
     ) {
-        let mut app = program.app.borrow_mut();
+        let mut app = program.app_mut();
         match attr_name {
             "label" => {
-                if let Some(label) = new_value.as_string() {
+                if let Some(label) = new_value {
                     app.label = label;
                 }
             }
             "width" => {
-                if let Some(v) = new_value.as_f64() {
-                    app.width = Some(v as i32);
+                if let Some(new_value) = new_value {
+                    if let Ok(v) = str::parse::<f64>(&new_value) {
+                        app.width = Some(v as i32);
+                    }
                 }
             }
             "height" => {
-                if let Some(v) = new_value.as_f64() {
-                    app.height = Some(v as i32);
+                if let Some(new_value) = new_value {
+                    if let Ok(v) = str::parse::<f64>(&new_value) {
+                        app.height = Some(v as i32);
+                    }
                 }
             }
             "theme-primary" => {
-                if let Some(primary) = new_value.as_string() {
+                if let Some(primary) = new_value {
                     let background = &app.theme.background_color;
                     let theme =
                         Theme::from_str(&primary, background).expect("must be a valid theme");
@@ -879,7 +871,7 @@ where
                 }
             }
             "theme-background" => {
-                if let Some(background) = new_value.as_string() {
+                if let Some(background) = new_value {
                     let primary = &app.theme.primary_color;
                     let theme =
                         Theme::from_str(primary, &background).expect("must be a valid theme");
@@ -887,14 +879,14 @@ where
                 }
             }
             "feature" => {
-                if let Some(v) = new_value.as_string() {
+                if let Some(v) = new_value {
                     if let Ok(feature) = Feature::from_str(&v) {
                         app.set_feature(feature);
                     }
                 }
             }
             "status" => {
-                if let Some(v) = new_value.as_string() {
+                if let Some(v) = new_value {
                     if let Ok(status) = Status::from_str(&v) {
                         app.set_status(status);
                     }
