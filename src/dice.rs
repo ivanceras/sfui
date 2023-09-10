@@ -321,3 +321,5 @@ impl<XMSG> Dice<XMSG> {
         }
     }
 }
+
+pub fn register() {}

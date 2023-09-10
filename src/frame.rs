@@ -687,4 +687,22 @@ impl FrameCustomElement {
         let child_node: web_sys::Node = child.unchecked_into();
         self.children.push(child_node);
     }
+
+    pub fn register() {
+        let constructor: Closure<dyn FnMut(JsValue)> = Closure::new(|node: JsValue| {
+            let new: Closure<dyn FnMut(JsValue) -> Self> =
+                Closure::new(|node: JsValue| Self::new(node));
+            js_sys::Reflect::set(&node, &JsValue::from_str("new"), &new.into_js_value())
+                .unwrap_throw();
+        });
+        sauron::dom::register_web_component(
+            "sfui-frame",
+            constructor.into_js_value(),
+            Self::observed_attributes(),
+        );
+    }
+}
+
+pub fn register() {
+    FrameCustomElement::register()
 }

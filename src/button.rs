@@ -369,7 +369,7 @@ where
         div(
             [
                 class(COMPONENT_NAME),
-                Self::classes_ns_flag([
+                classes_flag([
                     ("clicked", self.clicked),
                     ("click_highlights", self.feature.click_highlights),
                     ("expand_corners", self.feature.expand_corners),
@@ -433,19 +433,19 @@ where
         let main = jss! {
 
             // the ROOT component style
-            ".": {
+            Self::selector_ns(""): {
                 display: "inline-block",
                 padding: px(1),
                 position: "relative",
                 margin: px([10, 10]),
             },
 
-            ".hidden" : {
+            Self::selector_ns("hidden") : {
                 visibility: "hidden",
             },
 
             // hover effect at the lower part of the button
-            ".underline": {
+            Self::selector_ns("underline"): {
                 border_color: base.hover_color.clone(),
                 box_shadow: format!("{} {}", px([0,-2, 4]), base.hover_shadow.clone()),
                 z_index: 4,
@@ -455,17 +455,17 @@ where
                 border_style: "solid",
             },
 
-            ".has_underline.hovered .underline": {
+            Self::selectors_ns(["has_underline.hovered", "underline"]): {
                 width: percent(96),
             },
 
-            ".has_underline.hovered.chipped .underline": {
+            Self::selectors_ns(["has_underline.hovered.chipped", "underline"]): {
                 width: percent(70),
                 transform: format!("skewX({}deg) translate({}, {})", -45, percent(-57), 0),
                 transform_origin: "bottom left",
             },
 
-            ".underline-bottom": {
+            Self::selector_ns("underline-bottom"): {
                 width: 0,
                 left: percent(50),
                 bottom: px(2),
@@ -473,27 +473,27 @@ where
                 border_width: px([4, 0, 0, 0]),
             },
 
-            ".error .underline": {
+            Self::selectors_ns(["error", "underline"]): {
                 border_color: theme.error().to_css(),
                 box_shadow: format!("{} {}",px([0, -2, 4]), theme.error().to_css()),
             },
 
-            ".success .underline": {
+            Self::selectors_ns(["success", "underline"]): {
                 border_color: theme.success().to_css(),
                 box_shadow: format!("{} {}",px([0, -2, 4]), theme.success().to_css()),
             },
 
-            ".info .underline": {
+            Self::selectors_ns(["info", "underline"]): {
                 border_color: theme.info().to_css(),
                 box_shadow: format!("{} {}",px([0, -2, 4]), theme.info().to_css()),
             },
 
-            ".warning .underline": {
+            Self::selectors_ns(["warning", "underline"]): {
                 border_color: theme.warning().to_css(),
                 box_shadow: format!("{} {}",px([0, -2, 4]), theme.warning().to_css()),
             },
 
-            ".button_wrap": {
+            Self::selector_ns("button_wrap"): {
                 background_color: base.content_background_color.clone(),
                 z_index: 3,
                 display: "block",
@@ -503,7 +503,7 @@ where
             },
 
             // The actual button
-            ".button": {
+            Self::selector_ns("button"): {
                 color: base.button_text_color.clone(),
                 cursor: "pointer",
                 margin: 0,
@@ -522,36 +522,36 @@ where
                 white_space: "nowrap",
             },
 
-            ".error .button": {
+            Self::selectors_ns(["error", "button"]): {
                 border_color: theme.error().to_css(),
             },
 
-            ".success .button": {
+            Self::selectors_ns(["success", "button"]): {
                 border_color: theme.success().to_css(),
             },
 
-            ".info .button": {
+            Self::selectors_ns(["info", "button"]): {
                 border_color: theme.info().to_css(),
             },
 
-            ".warning .button": {
+            Self::selectors_ns(["warning", "button"]): {
                 border_color: theme.warning().to_css(),
             },
 
-            ".chipped_wrapper": {
+            Self::selector_ns("chipped_wrapper"): {
                 position: "relative",
                 width: px(width),
                 height: px(height),
             },
 
             // the svg of the chipped button
-            ".chipped_svg": {
+            Self::selector_ns("chipped_svg"): {
                 width: px(width),
                 height: px(height),
                 position: "absolute",
             },
 
-            ".chipped_button": {
+            Self::selector_ns("chipped_button"): {
                 color: base.button_text_color.clone(),
                 position: "absolute",
                 background_color: "transparent",
@@ -571,7 +571,7 @@ where
                 white_space: "nowrap",
             },
 
-            ".chipped_polygon": {
+            Self::selector_ns("chipped_polygon"): {
                 stroke_width: px(2),
                 stroke: base.border_color.clone(),
                 fill: base.content_background_color.clone(),
@@ -579,52 +579,52 @@ where
                 transition: format!("all {}ms ease-out", highlight_transition),
             },
 
-            ".triangle": {
+            Self::selector_ns("triangle"): {
                 stroke_width: px(2),
                 fill: base.border_color.clone(),
                 stroke: base.border_color.clone(),
             },
 
-            ".error .chipped_polygon": {
+            Self::selectors_ns(["error", "chipped_polygon"]): {
                 stroke: theme.error().to_css(),
             },
 
-            ".success .chipped_polygon": {
+            Self::selectors_ns(["success", "chipped_polygon"]): {
                 stroke: theme.success().to_css(),
             },
 
-            ".info .chipped_polygon": {
+            Self::selectors_ns(["info", "chipped_polygon"]): {
                 stroke: theme.info().to_css(),
             },
 
-            ".warning .chipped_polygon": {
+            Self::selectors_ns(["warning", "chipped_polygon"]): {
                 stroke: theme.warning().to_css(),
             },
 
 
-            ".error .triangle": {
+            Self::selectors_ns(["error", "triangle"]): {
                 fill: theme.error().to_css(),
                 stroke: theme.error().to_css(),
             },
 
-            ".success .triangle": {
+            Self::selectors_ns(["success", "triangle"]): {
                 fill: theme.success().to_css(),
                 stroke: theme.success().to_css(),
             },
 
-            ".info .triangle": {
+            Self::selectors_ns(["info", "triangle"]): {
                 fill: theme.info().to_css(),
                 stroke: theme.info().to_css(),
             },
 
-            ".warning .triangle": {
+            Self::selectors_ns(["warning", "triangle"]): {
                 fill: theme.warning().to_css(),
                 stroke: theme.warning().to_css(),
             },
 
 
             // highlight when clicked and fades out shortly
-            ".click_highlights .highlight": {
+            Self::selectors_ns(["click_highlights", "highlight"]): {
                   z_index: 1,
                   position: "absolute",
                   left: 0,
@@ -636,53 +636,53 @@ where
                   transition: format!("all {}ms ease-out", highlight_transition),
             },
 
-            ".click_highlights.clicked .highlight": {
+            Self::selectors_ns(["click_highlights.clicked", "highlight"]): {
                 opacity: 1,
             },
 
-            ".click_highlights.clicked.error .highlight": {
+            Self::selectors_ns(["click_highlights.clicked.error", "highlight"]): {
                 background_color: theme.error().to_css(),
             },
 
-            ".click_highlights.clicked.success .highlight": {
+            Self::selectors_ns(["click_highlights.clicked.success", "highlight"]): {
                 background_color: theme.success().to_css(),
             },
 
-            ".click_highlights.clicked.info .highlight": {
+            Self::selectors_ns(["click_highlights.clicked.info", "highlight"]): {
                 background_color: theme.info().to_css(),
             },
 
-            ".click_highlights.clicked.warning .highlight": {
+            Self::selectors_ns(["click_highlights.clicked.warning", "highlight"]): {
                 background_color: theme.warning().to_css(),
             },
 
-            ".click_highlights.clicked .chipped_polygon": {
+            Self::selectors_ns(["click_highlights.clicked", "chipped_polygon"]): {
                 fill: base.highlight_color.clone(),
             },
 
-            ".click_highlights.clicked.error .chipped_polygon": {
+            Self::selectors_ns(["click_highlights.clicked.error", "chipped_polygon"]): {
                 fill: theme.error().to_css(),
             },
 
-            ".click_highlights.clicked.success .chipped_polygon": {
+            Self::selectors_ns(["click_highlights.clicked.success", "chipped_polygon"]): {
                 fill: theme.success().to_css(),
             },
 
-            ".click_highlights.clicked.info .chipped_polygon": {
+            Self::selectors_ns(["click_highlights.clicked.info", "chipped_polygon"]): {
                 fill: theme.info().to_css(),
             },
 
-            ".click_highlights.clicked.warning .chipped_polygon": {
+            Self::selectors_ns(["click_highlights.clicked.warning", "chipped_polygon"]): {
                 fill: theme.warning().to_css(),
             },
 
-            ".skewed": {
+            Self::selector_ns("skewed"): {
                 transform: format!("skewX({}deg)", -45),
                 transform_origin: "bottom left",
                 margin_right: px(40),
             },
 
-            ".skewed .button, .skewed .chipped_button": {
+            Self::selectors_ns(["skewed", "button", "skewed", "chipped_button"]): {
                 transform: format!("skewX({}deg)", 45),
             },
 

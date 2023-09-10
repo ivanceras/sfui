@@ -10,3 +10,9 @@ pub mod dice;
 pub mod frame;
 mod status;
 mod theme;
+
+pub fn register_all() {
+    button::register();
+    frame::register();
+    dice::register();
+}
