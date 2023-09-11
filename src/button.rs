@@ -197,19 +197,16 @@ where
             [],
             [
                 div(
-                    [
-                        Self::class_ns("highlight"),
-                        on_transitionend(|_| Msg::HighlightEnd),
-                    ],
+                    [class("highlight"), on_transitionend(|_| Msg::HighlightEnd)],
                     [],
                 ),
                 div(
-                    [Self::class_ns("button_wrap")],
+                    [class("button_wrap")],
                     [button(
                         [
-                            Self::class_ns("button"),
+                            class("button"),
                             if let Some(ref status) = self.status {
-                                Self::class_ns(status.class_name())
+                                class(status.class_name())
                             } else {
                                 empty_attr()
                             },
@@ -270,30 +267,30 @@ where
             .join(" ");
 
         div(
-            [Self::class_ns("chipped_wrapper")],
+            [class("chipped_wrapper")],
             [
                 svg(
                     [
                         xmlns("http://www.w3.org/2000/svg"),
                         preserve_aspect_ratio("none"),
-                        Self::class_ns("chipped_svg"),
+                        class("chipped_svg"),
                         view_box([0, 0, width, height]),
                     ],
                     [
                         polygon(
                             [
-                                Self::class_ns("chipped_polygon"),
+                                class("chipped_polygon"),
                                 points(poly_points_str),
                                 on_transitionend(|_| Msg::HighlightEnd),
                             ],
                             [],
                         ),
-                        polygon([Self::class_ns("triangle"), points(triangle_points)], []),
+                        polygon([class("triangle"), points(triangle_points)], []),
                     ],
                 ),
                 button(
                     [
-                        Self::class_ns("chipped_button"),
+                        class("chipped_button"),
                         disabled(self.feature.disabled),
                         style! {width: px(width)},
                         style! {height: px(height)},
@@ -384,7 +381,7 @@ where
                     ("hidden", self.feature.hidden),
                 ]),
                 if let Some(ref status) = self.status {
-                    Self::class_ns(status.class_name())
+                    class(status.class_name())
                 } else {
                     empty_attr()
                 },
@@ -410,7 +407,7 @@ where
                     [
                         view_if(
                             self.feature.has_underline,
-                            div([Self::class_ns("underline underline-bottom")], []),
+                            div([class("underline underline-bottom")], []),
                         ),
                         self.view_button(),
                     ],
@@ -433,19 +430,19 @@ where
         let main = jss! {
 
             // the ROOT component style
-            Self::selector_ns(""): {
+           COMPONENT_NAME: {
                 display: "inline-block",
                 padding: px(1),
                 position: "relative",
                 margin: px([10, 10]),
             },
 
-            Self::selector_ns("hidden") : {
+            ".hidden" : {
                 visibility: "hidden",
             },
 
             // hover effect at the lower part of the button
-            Self::selector_ns("underline"): {
+            ".underline": {
                 border_color: base.hover_color.clone(),
                 box_shadow: format!("{} {}", px([0,-2, 4]), base.hover_shadow.clone()),
                 z_index: 4,
@@ -455,17 +452,17 @@ where
                 border_style: "solid",
             },
 
-            Self::selectors_ns(["has_underline.hovered", "underline"]): {
+            ".has_underline.hovered .underline": {
                 width: percent(96),
             },
 
-            Self::selectors_ns(["has_underline.hovered.chipped", "underline"]): {
+            ".has_underline.hovered.chipped .underline": {
                 width: percent(70),
                 transform: format!("skewX({}deg) translate({}, {})", -45, percent(-57), 0),
                 transform_origin: "bottom left",
             },
 
-            Self::selector_ns("underline-bottom"): {
+            ".underline-bottom": {
                 width: 0,
                 left: percent(50),
                 bottom: px(2),
@@ -473,27 +470,27 @@ where
                 border_width: px([4, 0, 0, 0]),
             },
 
-            Self::selectors_ns(["error", "underline"]): {
+            ".error .underline": {
                 border_color: theme.error().to_css(),
                 box_shadow: format!("{} {}",px([0, -2, 4]), theme.error().to_css()),
             },
 
-            Self::selectors_ns(["success", "underline"]): {
+            ".success .underline": {
                 border_color: theme.success().to_css(),
                 box_shadow: format!("{} {}",px([0, -2, 4]), theme.success().to_css()),
             },
 
-            Self::selectors_ns(["info", "underline"]): {
+            ".info .underline": {
                 border_color: theme.info().to_css(),
                 box_shadow: format!("{} {}",px([0, -2, 4]), theme.info().to_css()),
             },
 
-            Self::selectors_ns(["warning", "underline"]): {
+            ".warning .underline": {
                 border_color: theme.warning().to_css(),
                 box_shadow: format!("{} {}",px([0, -2, 4]), theme.warning().to_css()),
             },
 
-            Self::selector_ns("button_wrap"): {
+            ".button_wrap": {
                 background_color: base.content_background_color.clone(),
                 z_index: 3,
                 display: "block",
@@ -503,7 +500,7 @@ where
             },
 
             // The actual button
-            Self::selector_ns("button"): {
+            ".button": {
                 color: base.button_text_color.clone(),
                 cursor: "pointer",
                 margin: 0,
@@ -522,36 +519,36 @@ where
                 white_space: "nowrap",
             },
 
-            Self::selectors_ns(["error", "button"]): {
+            ".error .button": {
                 border_color: theme.error().to_css(),
             },
 
-            Self::selectors_ns(["success", "button"]): {
+            ".success .button": {
                 border_color: theme.success().to_css(),
             },
 
-            Self::selectors_ns(["info", "button"]): {
+            ".info .button": {
                 border_color: theme.info().to_css(),
             },
 
-            Self::selectors_ns(["warning", "button"]): {
+            ".warning .button": {
                 border_color: theme.warning().to_css(),
             },
 
-            Self::selector_ns("chipped_wrapper"): {
+            ".chipped_wrapper": {
                 position: "relative",
                 width: px(width),
                 height: px(height),
             },
 
             // the svg of the chipped button
-            Self::selector_ns("chipped_svg"): {
+            ".chipped_svg": {
                 width: px(width),
                 height: px(height),
                 position: "absolute",
             },
 
-            Self::selector_ns("chipped_button"): {
+            ".chipped_button": {
                 color: base.button_text_color.clone(),
                 position: "absolute",
                 background_color: "transparent",
@@ -571,7 +568,7 @@ where
                 white_space: "nowrap",
             },
 
-            Self::selector_ns("chipped_polygon"): {
+            ".chipped_polygon": {
                 stroke_width: px(2),
                 stroke: base.border_color.clone(),
                 fill: base.content_background_color.clone(),
@@ -579,52 +576,52 @@ where
                 transition: format!("all {}ms ease-out", highlight_transition),
             },
 
-            Self::selector_ns("triangle"): {
+            ".triangle": {
                 stroke_width: px(2),
                 fill: base.border_color.clone(),
                 stroke: base.border_color.clone(),
             },
 
-            Self::selectors_ns(["error", "chipped_polygon"]): {
+            ".error .chipped_polygon": {
                 stroke: theme.error().to_css(),
             },
 
-            Self::selectors_ns(["success", "chipped_polygon"]): {
+            ".success .chipped_polygon": {
                 stroke: theme.success().to_css(),
             },
 
-            Self::selectors_ns(["info", "chipped_polygon"]): {
+            ".info .chipped_polygon": {
                 stroke: theme.info().to_css(),
             },
 
-            Self::selectors_ns(["warning", "chipped_polygon"]): {
+            ".warning .chipped_polygon": {
                 stroke: theme.warning().to_css(),
             },
 
 
-            Self::selectors_ns(["error", "triangle"]): {
+            ".error .triangle": {
                 fill: theme.error().to_css(),
                 stroke: theme.error().to_css(),
             },
 
-            Self::selectors_ns(["success", "triangle"]): {
+            ".success .triangle": {
                 fill: theme.success().to_css(),
                 stroke: theme.success().to_css(),
             },
 
-            Self::selectors_ns(["info", "triangle"]): {
+            ".info .triangle": {
                 fill: theme.info().to_css(),
                 stroke: theme.info().to_css(),
             },
 
-            Self::selectors_ns(["warning", "triangle"]): {
+            ".warning .triangle": {
                 fill: theme.warning().to_css(),
                 stroke: theme.warning().to_css(),
             },
 
 
             // highlight when clicked and fades out shortly
-            Self::selectors_ns(["click_highlights", "highlight"]): {
+            ".click_highlights .highlight": {
                   z_index: 1,
                   position: "absolute",
                   left: 0,
@@ -636,53 +633,53 @@ where
                   transition: format!("all {}ms ease-out", highlight_transition),
             },
 
-            Self::selectors_ns(["click_highlights.clicked", "highlight"]): {
+            ".click_highlights.clicked .highlight": {
                 opacity: 1,
             },
 
-            Self::selectors_ns(["click_highlights.clicked.error", "highlight"]): {
+            ".click_highlights.clicked.error .highlight": {
                 background_color: theme.error().to_css(),
             },
 
-            Self::selectors_ns(["click_highlights.clicked.success", "highlight"]): {
+            ".click_highlights.clicked.success .highlight": {
                 background_color: theme.success().to_css(),
             },
 
-            Self::selectors_ns(["click_highlights.clicked.info", "highlight"]): {
+            ".click_highlights.clicked.info .highlight": {
                 background_color: theme.info().to_css(),
             },
 
-            Self::selectors_ns(["click_highlights.clicked.warning", "highlight"]): {
+            ".click_highlights.clicked.warning .highlight": {
                 background_color: theme.warning().to_css(),
             },
 
-            Self::selectors_ns(["click_highlights.clicked", "chipped_polygon"]): {
+            ".click_highlights.clicked .chipped_polygon": {
                 fill: base.highlight_color.clone(),
             },
 
-            Self::selectors_ns(["click_highlights.clicked.error", "chipped_polygon"]): {
+            ".click_highlights.clicked.error .chipped_polygon": {
                 fill: theme.error().to_css(),
             },
 
-            Self::selectors_ns(["click_highlights.clicked.success", "chipped_polygon"]): {
+            ".click_highlights.clicked.success .chipped_polygon": {
                 fill: theme.success().to_css(),
             },
 
-            Self::selectors_ns(["click_highlights.clicked.info", "chipped_polygon"]): {
+            ".click_highlights.clicked.info .chipped_polygon": {
                 fill: theme.info().to_css(),
             },
 
-            Self::selectors_ns(["click_highlights.clicked.warning", "chipped_polygon"]): {
+            ".click_highlights.clicked.warning .chipped_polygon": {
                 fill: theme.warning().to_css(),
             },
 
-            Self::selector_ns("skewed"): {
+            ".skewed": {
                 transform: format!("skewX({}deg)", -45),
                 transform_origin: "bottom left",
                 margin_right: px(40),
             },
 
-            Self::selectors_ns(["skewed", "button", "skewed", "chipped_button"]): {
+            ".skewed .button, .skewed .chipped_button": {
                 transform: format!("skewX({}deg)", 45),
             },
 
