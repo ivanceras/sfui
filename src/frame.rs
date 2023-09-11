@@ -152,19 +152,19 @@ where
         node_list([
             view_if(
                 self.feature.has_borders,
-                div([Self::class_ns("border border-left")], []),
+                div([class("border border-left")], []),
             ),
             view_if(
                 self.feature.has_borders,
-                div([Self::class_ns("border border-right")], []),
+                div([class("border border-right")], []),
             ),
             view_if(
                 self.feature.has_borders,
-                div([Self::class_ns("border border-top")], []),
+                div([class("border border-top")], []),
             ),
             view_if(
                 self.feature.has_borders,
-                div([Self::class_ns("border border-bottom")], []),
+                div([class("border border-bottom")], []),
             ),
         ])
     }
@@ -173,19 +173,19 @@ where
         node_list([
             view_if(
                 self.feature.has_corners,
-                div([Self::class_ns("corner corner__top-left")], []),
+                div([class("corner corner__top-left")], []),
             ),
             view_if(
                 self.feature.has_corners,
-                div([Self::class_ns("corner corner__bottom-left")], []),
+                div([class("corner corner__bottom-left")], []),
             ),
             view_if(
                 self.feature.has_corners,
-                div([Self::class_ns("corner corner__top-right")], []),
+                div([class("corner corner__top-right")], []),
             ),
             view_if(
                 self.feature.has_corners,
-                div([Self::class_ns("corner corner__bottom-right")], []),
+                div([class("corner corner__bottom-right")], []),
             ),
         ])
     }
@@ -239,14 +239,14 @@ where
         div(
             [
                 class(COMPONENT_NAME),
-                Self::classes_ns_flag([
+                classes_flag([
                     ("clicked", self.clicked),
                     ("expand_corners", self.feature.expand_corners),
                     ("has_corner_box_shadow", self.feature.has_corner_box_shadow),
                     ("hovered", self.hovered),
                 ]),
                 if let Some(ref status) = self.status {
-                    Self::class_ns(status.class_name())
+                    class(status.class_name())
                 } else {
                     empty_attr()
                 },
@@ -294,7 +294,7 @@ where
 
         let main = jss! {
             // the ROOT component style
-            ".": {
+            COMPONENT_NAME: {
                 display: "inline-block",
                 padding: px(1),
                 position: "relative",
@@ -450,15 +450,15 @@ where
                 border_color: theme.error().to_css(),
             },
 
-            ".success .corner": {
+            ".success  .corner": {
                 border_color: theme.success().to_css(),
             },
 
-            ".info .corner": {
+            ".info  .corner": {
                 border_color: theme.info().to_css(),
             },
 
-            ".warning .corner": {
+            ".warning  .corner": {
                 border_color: theme.warning().to_css(),
             },
 
@@ -497,17 +497,17 @@ where
             //  - `.class1,.class2 child` means either if either class1 or class2 is specified in the
             // parent, the properties will be applied to this child element
             //
-            ".expand_corners.hovered .corner__top-left": {
+            ".expand_corners.hovered  .corner__top-left": {
                 left: px(-corner_expand_distance),
                 top: px(-corner_expand_distance),
             },
 
-            ".expand_corners.hovered .corner__bottom-left": {
+            ".expand_corners.hovered  .corner__bottom-left": {
                 left: px(-corner_expand_distance),
                 bottom: px(-corner_expand_distance),
             },
 
-            ".expand_corners.hovered .corner__top-right": {
+            ".expand_corners.hovered  .corner__top-right": {
                 right: px(-corner_expand_distance),
                 top: px(-corner_expand_distance),
             },
@@ -658,6 +658,12 @@ impl FrameCustomElement {
         log::info!("frame connected..");
         self.program.mount();
 
+        let static_style = <Frame<()> as Application<Msg<()>>>::stylesheet().join("");
+        self.program.inject_style_to_mount(&static_style);
+        let dynamic_style =
+            <Frame<()> as Application<Msg<()>>>::style(&self.program.app()).join("");
+        self.program.inject_style_to_mount(&dynamic_style);
+
         log::info!("adding children to frame..");
         let children: Vec<web_sys::Node> = self.children.clone();
         self.program
@@ -685,6 +691,8 @@ impl FrameCustomElement {
         use sauron::wasm_bindgen::JsCast;
 
         let child_node: web_sys::Node = child.unchecked_into();
+        let html_child: &web_sys::HtmlElement = child_node.unchecked_ref();
+        log::info!("appending child...: {:?}", html_child);
         self.children.push(child_node);
     }
 
