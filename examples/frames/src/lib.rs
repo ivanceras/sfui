@@ -4,14 +4,16 @@ use sfui::sauron::*;
 use sfui::Theme;
 
 struct App {
+    theme: Theme,
     frame: Frame<Msg>,
 }
 
 impl App {
     fn new() -> Self {
-        let theme = Theme::black_on_white();
+        let theme = Theme::green_on_black();
         Self {
             frame: Frame::default().with_theme(theme.clone()),
+            theme,
         }
     }
 }
@@ -25,7 +27,7 @@ impl Application<Msg> for App {
 
     fn view(&self) -> Node<Msg> {
         node! {
-            <sfui-frame>
+            <sfui-frame theme-primary=&self.theme.primary_color them-background=&self.theme.background_color>
                 This is inside sfui-frame
                 <button>This is a button</button>
                 <br/>
@@ -37,7 +39,7 @@ impl Application<Msg> for App {
     }
 
     fn style(&self) -> Vec<String> {
-        self.frame.style()
+        vec![self.frame.style(), self.theme.style()].concat()
     }
 }
 

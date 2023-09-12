@@ -81,6 +81,12 @@ pub struct Dimension {
 
 impl Default for Dimension {
     fn default() -> Self {
+        Self::static_frame()
+    }
+}
+
+impl Dimension {
+    fn large() -> Self {
         Self {
             corner_width: 4,
             corner_length: 16,
@@ -88,15 +94,21 @@ impl Default for Dimension {
             content_padding: 0,
         }
     }
-}
-
-impl Dimension {
     pub fn small() -> Self {
         Self {
             corner_width: 2,
             corner_length: 8,
             corner_expand_distance: 6,
             content_padding: 0,
+        }
+    }
+
+    pub fn static_frame() -> Self {
+        Self {
+            corner_width: 2,
+            corner_length: 8,
+            corner_expand_distance: 6,
+            content_padding: 10,
         }
     }
 }
@@ -562,6 +574,12 @@ where
 
 impl Default for Feature {
     fn default() -> Self {
+        Self::static_frame()
+    }
+}
+
+impl Feature {
+    fn tight() -> Self {
         Self {
             has_corners: true,
             outward_corners: true,
@@ -572,9 +590,6 @@ impl Default for Feature {
             has_border_box_shadow: true,
         }
     }
-}
-
-impl Feature {
     fn static_frame() -> Self {
         Self {
             has_corners: true,
