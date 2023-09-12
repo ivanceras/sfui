@@ -28,6 +28,10 @@ impl Application<Msg> for App {
             <sfui-frame>
                 This is inside sfui-frame
                 <button>This is a button</button>
+                <br/>
+                <p>
+                    This is a paragraph
+                </p>
             </sfui-frame>
         }
     }

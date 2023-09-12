@@ -53,11 +53,18 @@ pub struct Frame<XMSG> {
 pub struct Feature {
     /// has corners
     pub has_corners: bool,
+    /// corner lies outward of the border lines
+    /// if false, corner lines aligns to the border lines
+    pub outward_corners: bool,
     /// the frame has borders
     pub has_borders: bool,
+    /// wheter the border extend all the way through the full size of the frame
+    /// if false, the border will have stop at some distance from the corner of the frame
+    pub full_borders: bool,
     /// expand corners when hovered
     pub expand_corners: bool,
     pub has_corner_box_shadow: bool,
+    pub has_border_box_shadow: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -68,6 +75,8 @@ pub struct Dimension {
     pub corner_length: i32,
     /// distance that clips at the corner expands when the button is hovered
     pub corner_expand_distance: i32,
+    /// the padding for the content of the frame
+    pub content_padding: i32,
 }
 
 impl Default for Dimension {
@@ -76,6 +85,7 @@ impl Default for Dimension {
             corner_width: 4,
             corner_length: 16,
             corner_expand_distance: 12,
+            content_padding: 0,
         }
     }
 }
@@ -86,6 +96,7 @@ impl Dimension {
             corner_width: 2,
             corner_length: 8,
             corner_expand_distance: 6,
+            content_padding: 0,
         }
     }
 }
@@ -243,6 +254,7 @@ where
                     ("clicked", self.clicked),
                     ("expand_corners", self.feature.expand_corners),
                     ("has_corner_box_shadow", self.feature.has_corner_box_shadow),
+                    ("has_border_box_shadow", self.feature.has_border_box_shadow),
                     ("hovered", self.hovered),
                 ]),
                 if let Some(ref status) = self.status {
@@ -267,7 +279,10 @@ where
                     // corners
                     self.view_corners(),
                     div(
-                        [on_mount(|me| Msg::ContentTargetMounted(me))],
+                        [
+                            class("content_wrap"),
+                            on_mount(|me| Msg::ContentTargetMounted(me)),
+                        ],
                         content
                             .into_iter()
                             .chain(self.children.clone().into_iter())
@@ -291,6 +306,7 @@ where
 
         let width = self.computed_width();
         let height = self.computed_height();
+        let content_padding = self.dimension.content_padding;
 
         let main = jss! {
             // the ROOT component style
@@ -299,6 +315,10 @@ where
                 padding: px(1),
                 position: "relative",
                 margin: px([10, 10]),
+            },
+
+            ".content_wrap": {
+                padding: px(content_padding),
             },
 
             ".hidden" : {
@@ -350,18 +370,29 @@ where
         let border_width = 1; // the width of the border for each side of the button
         let base = &theme.controls;
         let transition_time_ms = self.transition_time_ms(); //transition time for most effects on the button
+                                                            //
+        let Dimension { corner_length, .. } = self.dimension;
+
+        let border_cut = if self.feature.full_borders {
+            0
+        } else {
+            (corner_length + 4) * 2
+        };
 
         jss! {
             // BORDERS these are styled divs wrapping the buttons
             ".border": {
                 border_color: base.border_color.clone(),
-                box_shadow: format!("{} {}",px([0,0,4]), base.border_shadow.clone()),
                 z_index: 1,
                 opacity: 1,
                 position: "absolute",
                 transition: format!("all {}ms ease-in",transition_time_ms),
                 border_style: "solid",
             },
+
+            ".has_border_box_shadow .border":{
+                box_shadow: format!("{} {}",px([0,0,4]), base.border_shadow.clone()),
+            }
 
             ".error .border": {
                 border_color: theme.error().to_css(),
@@ -387,7 +418,7 @@ where
             ".border-left": {
                 top: percent(50),
                 left: 0,
-                height: percent(100),
+                height: format!("calc({} - {})", percent(100), px(border_cut)),
                 transform: format!("translate({}, {})", 0, percent(-50)),
                 border_width: px([0, 0, 0, border_width]),
             },
@@ -395,7 +426,7 @@ where
             ".border-right": {
                 top: percent(50),
                 right: 0,
-                height: percent(100),
+                height: format!("calc({} - {})", percent(100), px(border_cut)),
                 transform: format!("translate({}, {})", 0, percent(-50)),
                 border_width: px([0, 0, 0, border_width]),
             },
@@ -403,14 +434,14 @@ where
             ".border-top": {
                 top: 0,
                 left: percent(50),
-                width: percent(100),
+                width: format!("calc({} - {})", percent(100), px(border_cut)),
                 transform: format!("translate({}, {})", percent(-50), 0),
                 border_width: px([border_width, 0, 0, 0]),
             },
 
             ".border-bottom": {
                 left: percent(50),
-                width: percent(100),
+                width: format!("calc({} - {})", percent(100),  px(border_cut)),
                 bottom: 0,
                 transform: format!("translate({}, {})", percent(-50), 0),
                 border_width: px([border_width, 0, 0, 0]),
@@ -422,12 +453,21 @@ where
         let theme = &self.theme;
         let base = &theme.controls;
         let transition_time_ms = self.transition_time_ms();
+        let outward_corners = self.feature.outward_corners;
 
         let Dimension {
             corner_width,
             corner_length,
             corner_expand_distance,
+            ..
         } = self.dimension;
+
+        // arm of top, left bottom, right for the corners
+        let arm = if outward_corners {
+            -corner_width
+        } else {
+            -corner_width / 2
+        };
 
         jss! {
             // CORNERS - the fancy divs which clips the button
@@ -464,26 +504,26 @@ where
 
 
             ".corner__top-left": {
-                left: px(-corner_width),
-                top: px(-corner_width),
+                left: px(arm),
+                top: px(arm),
                 border_width: px([corner_width, 0, 0, corner_width]),
             },
 
             ".corner__bottom-left": {
-                left: px(-corner_width),
-                bottom: px(-corner_width),
+                left: px(arm),
+                bottom: px(arm),
                 border_width: px([0, 0, corner_width, corner_width]),
             },
 
             ".corner__top-right": {
-                right: px(-corner_width),
-                top: px(-corner_width),
+                right: px(arm),
+                top: px(arm),
                 border_width: px([corner_width, corner_width, 0, 0]),
             },
 
             ".corner__bottom-right": {
-                right: px(-corner_width),
-                bottom: px(-corner_width),
+                right: px(arm),
+                bottom: px(arm),
                 border_width: px([0, corner_width, corner_width, 0]),
             },
 
@@ -524,9 +564,26 @@ impl Default for Feature {
     fn default() -> Self {
         Self {
             has_corners: true,
+            outward_corners: true,
             has_borders: true,
+            full_borders: true,
             expand_corners: true,
+            has_corner_box_shadow: true,
+            has_border_box_shadow: true,
+        }
+    }
+}
+
+impl Feature {
+    fn static_frame() -> Self {
+        Self {
+            has_corners: true,
+            outward_corners: false,
+            has_borders: true,
+            full_borders: false,
+            expand_corners: false,
             has_corner_box_shadow: false,
+            has_border_box_shadow: false,
         }
     }
 }

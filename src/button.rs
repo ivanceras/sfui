@@ -98,9 +98,12 @@ impl Into<frame::Feature> for Feature {
     fn into(self) -> frame::Feature {
         frame::Feature {
             has_corners: self.has_corners,
+            outward_corners: true,
             has_borders: self.has_borders,
+            full_borders: true,
             expand_corners: self.expand_corners,
             has_corner_box_shadow: self.has_corner_box_shadow,
+            has_border_box_shadow: true,
         }
     }
 }
