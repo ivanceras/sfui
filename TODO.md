@@ -24,3 +24,14 @@
     - background-700
     - background-800
     - background-900
+- Make concrete types for each button variations
+    - Simple button
+    - Chip button
+    - Flashy Button
+    - Skewed button
+- Make concrete types for Frames
+    - InteractiveFrame
+    - Static frame
+- Card
+    - Product card
+    - icon card

@@ -1,3 +1,4 @@
+use sfui::card::Card;
 use sfui::frame::Frame;
 use sfui::sauron;
 use sfui::sauron::*;
@@ -6,6 +7,7 @@ use sfui::Theme;
 struct App {
     theme: Theme,
     frame: Frame<Msg>,
+    card: Card<Msg>,
 }
 
 impl App {
@@ -13,6 +15,7 @@ impl App {
         let theme = Theme::green_on_black();
         Self {
             frame: Frame::default().with_theme(theme.clone()),
+            card: Card::default().with_theme(theme.clone()),
             theme,
         }
     }
@@ -35,6 +38,9 @@ impl Application<Msg> for App {
                     This is a paragraph
                 </p>
             </sfui-frame>
+            <sfui-card>
+                This is a card
+            </sfui-card>
         }
     }
 

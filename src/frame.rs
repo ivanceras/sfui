@@ -25,12 +25,6 @@ pub enum Msg<XMSG> {
     ContentTargetMounted(MountEvent),
 }
 
-impl<XMSG> From<XMSG> for Msg<XMSG> {
-    fn from(xmsg: XMSG) -> Self {
-        Msg::External(xmsg)
-    }
-}
-
 #[derive(Debug)]
 pub struct Frame<XMSG> {
     feature: Feature,
@@ -298,7 +292,7 @@ where
                         content
                             .into_iter()
                             .chain(self.children.clone().into_iter())
-                            .map(|node| node.map_msg(|xmsg| Msg::from(xmsg))),
+                            .map(|node| node.map_msg(|xmsg| Msg::External(xmsg))),
                     ),
                 ],
             )],
@@ -653,29 +647,6 @@ fn extract_children_nodes(node: &web_sys::Node) -> Vec<web_sys::Node> {
         .into_iter()
         .map(|i| node_list.item(i as u32).expect("must have an item"))
         .collect()
-}
-
-impl Application<Msg<()>> for Frame<()> {
-    fn init(&mut self) -> Cmd<Self, Msg<()>> {
-        Cmd::from(<Self as Container<Msg<()>, ()>>::init(self))
-    }
-
-    fn update(&mut self, msg: Msg<()>) -> Cmd<Self, Msg<()>> {
-        let effects = <Self as Container<Msg<()>, ()>>::update(self, msg);
-        Cmd::from(effects)
-    }
-
-    fn view(&self) -> Node<Msg<()>> {
-        <Self as Container<Msg<()>, ()>>::view(self, [])
-    }
-
-    fn stylesheet() -> Vec<String> {
-        <Self as Container<Msg<()>, ()>>::stylesheet()
-    }
-
-    fn style(&self) -> Vec<String> {
-        <Self as Container<Msg<()>, ()>>::style(self)
-    }
 }
 
 #[wasm_bindgen]

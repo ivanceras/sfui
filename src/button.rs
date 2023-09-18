@@ -51,6 +51,7 @@ pub struct Button<XMSG> {
     /// used by chipped_button
     button_width: Option<f32>,
     button_height: Option<f32>,
+    children: Vec<Node<XMSG>>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -131,6 +132,7 @@ where
             chipped_button: None,
             button_width: None,
             button_height: None,
+            children: vec![],
         }
     }
 }
@@ -308,7 +310,7 @@ where
 
 // Note: we are not using the custom element macro yet
 // since, there are hiccups at the moment
-impl<XMSG> Component<Msg, XMSG> for Button<XMSG>
+impl<XMSG> Container<Msg, XMSG> for Button<XMSG>
 where
     XMSG: 'static,
 {
@@ -365,7 +367,7 @@ where
         }
     }
 
-    fn view(&self) -> Node<Msg> {
+    fn view(&self, content: impl IntoIterator<Item = Node<XMSG>>) -> Node<Msg> {
         div(
             [
                 class(COMPONENT_NAME),
@@ -405,19 +407,21 @@ where
                     ],
                     [],
                 ),
-                <Frame<Msg> as Container<frame::Msg<Msg>, Msg>>::view(
-                    &self.frame,
-                    [
+                self.frame
+                    .view([
                         view_if(
                             self.feature.has_underline,
                             div([class("underline underline-bottom")], []),
                         ),
                         self.view_button(),
-                    ],
-                )
-                .map_msg(|fmsg| Msg::FrameMsg(Box::new(fmsg))),
+                    ])
+                    .map_msg(|fmsg| Msg::FrameMsg(Box::new(fmsg))),
             ],
         )
+    }
+
+    fn append_child(&mut self, child: Node<XMSG>) {
+        self.children.push(child)
     }
 
     fn style(&self) -> Vec<String> {

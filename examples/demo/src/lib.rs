@@ -66,12 +66,10 @@ impl Application<Msg> for App {
             "chipped", "regular", "skewed", "muted", "disabled", "simple",
         ];
         let statuses = ["none", "success", "error", "warning", "info"];
-        //let features = ["chipped"];
-        //let statuses = ["none"];
 
         node! {
             <div>
-                {self.button.view().map_msg(Msg::ButtonMsg)}
+                {self.button.view([]).map_msg(Msg::ButtonMsg)}
                 <div {style!{display:"flex", flex_direction:"row"}}>
                     {
                         for feature in features{

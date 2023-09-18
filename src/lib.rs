@@ -6,6 +6,7 @@ pub use status::Status;
 pub use theme::Theme;
 
 pub mod button;
+pub mod card;
 pub mod dice;
 pub mod frame;
 mod status;
