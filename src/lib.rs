@@ -16,4 +16,5 @@ pub fn register_all() {
     button::register();
     frame::register();
     dice::register();
+    card::register();
 }

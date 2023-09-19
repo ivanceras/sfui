@@ -107,10 +107,7 @@ impl Dimension {
     }
 }
 
-impl<XMSG> Default for Frame<XMSG>
-where
-    XMSG: 'static,
-{
+impl<XMSG> Default for Frame<XMSG> {
     fn default() -> Self {
         Self {
             feature: Feature::default(),
@@ -129,10 +126,7 @@ where
     }
 }
 
-impl<XMSG> Frame<XMSG>
-where
-    XMSG: 'static,
-{
+impl<XMSG> Frame<XMSG> {
     pub fn set_theme(&mut self, theme: Theme) {
         self.theme = theme;
     }
@@ -316,7 +310,7 @@ where
 
         let main = jss! {
             // the ROOT component style
-            COMPONENT_NAME: {
+            format!(".{}",COMPONENT_NAME): {
                 display: "inline-block",
                 padding: px(1),
                 position: "relative",
@@ -358,7 +352,7 @@ where
         self.click_listeners.push(cb);
     }
 
-    pub fn add_container_mounted_listener<F>(&mut self, f: F)
+    pub fn container_mounted_listener<F>(&mut self, f: F)
     where
         F: Fn(MountEvent) -> XMSG + 'static,
     {
@@ -711,7 +705,7 @@ impl FrameCustomElement {
         let children: Vec<web_sys::Node> = self.children.clone();
         self.program
             .app_mut()
-            .add_container_mounted_listener(move |me| {
+            .container_mounted_listener(move |me| {
                 Self::append_children_to_shadow_mount(me.target_node, &children);
             });
     }

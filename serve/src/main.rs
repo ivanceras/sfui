@@ -32,7 +32,6 @@ async fn main() {
         .init();
 
     let args = Args::parse();
-    println!("args: {:?}", args);
     let port = if let Some(port) = args.port {
         port
     } else {

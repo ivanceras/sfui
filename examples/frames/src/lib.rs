@@ -24,13 +24,13 @@ impl App {
 enum Msg {}
 
 impl Application<Msg> for App {
-    fn update(&mut self, msg: Msg) -> Cmd<Self, Msg> {
+    fn update(&mut self, _msg: Msg) -> Cmd<Self, Msg> {
         Cmd::none()
     }
 
     fn view(&self) -> Node<Msg> {
         node! {
-            <sfui-frame theme-primary=&self.theme.primary_color them-background=&self.theme.background_color>
+            <sfui-frame theme-primary=&self.theme.primary_color theme-background=&self.theme.background_color>
                 This is inside sfui-frame
                 <button>This is a button</button>
                 <br/>
@@ -38,8 +38,7 @@ impl Application<Msg> for App {
                     This is a paragraph
                 </p>
             </sfui-frame>
-            <sfui-card>
-                This is a card
+            <sfui-card theme-primary=&self.theme.primary_color theme-background=&self.theme.background_color>
             </sfui-card>
         }
     }
