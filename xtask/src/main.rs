@@ -24,7 +24,7 @@ enum Commands {
     },
 }
 
-fn build_example(sh: &Shell, dir: &PathBuf, port: u16) -> anyhow::Result<()> {
+fn run_webapp(sh: &Shell, dir: &PathBuf, port: u16) -> anyhow::Result<()> {
     let current_dir = sh.current_dir();
     sh.change_dir(dir);
     cmd!(sh, "wasm-pack build --target web --release").run()?;
@@ -39,7 +39,7 @@ fn main() -> anyhow::Result<()> {
     let sh = Shell::new()?;
     match args.command {
         Commands::RunWeb { dir, port } => {
-            build_example(&sh, &dir, port)?;
+            run_webapp(&sh, &dir, port)?;
         }
     }
     Ok(())
