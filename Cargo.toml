@@ -21,5 +21,9 @@ features = [
 ]
 
 [workspace]
-members = ["examples/*"]
+members = [
+    "xtask",
+    "serve",
+    "examples/*"
+]
 
