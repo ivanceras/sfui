@@ -634,15 +634,6 @@ impl<XMSG> WebComponent<Msg<XMSG>> for Frame<XMSG> {
     fn adopted_callback(&mut self) {}
 }
 
-fn extract_children_nodes(node: &web_sys::Node) -> Vec<web_sys::Node> {
-    let node_list = node.child_nodes();
-    let children_len = node_list.length() as usize;
-    (0..children_len)
-        .into_iter()
-        .map(|i| node_list.item(i as u32).expect("must have an item"))
-        .collect()
-}
-
 #[wasm_bindgen]
 pub struct FrameCustomElement {
     program: Program<Frame<()>, Msg<()>>,
@@ -654,10 +645,9 @@ impl FrameCustomElement {
     #[wasm_bindgen(constructor)]
     pub fn new(node: JsValue) -> Self {
         use sauron::wasm_bindgen::JsCast;
-        log::info!("new frame custom element");
 
         let mount_node: &web_sys::Node = node.unchecked_ref();
-        let children = extract_children_nodes(mount_node);
+        let children = Self::extract_children_nodes(mount_node);
         Self {
             program: Program::new(
                 Frame::<()>::default(),
@@ -667,6 +657,15 @@ impl FrameCustomElement {
             ),
             children,
         }
+    }
+
+    fn extract_children_nodes(node: &web_sys::Node) -> Vec<web_sys::Node> {
+        let node_list = node.child_nodes();
+        let children_len = node_list.length() as usize;
+        (0..children_len)
+            .into_iter()
+            .map(|i| node_list.item(i as u32).expect("must have an item"))
+            .collect()
     }
 
     #[wasm_bindgen(getter, static_method_of = Self, js_name = observedAttributes)]
@@ -692,7 +691,6 @@ impl FrameCustomElement {
 
     #[wasm_bindgen(method, js_name = connectedCallback)]
     pub fn connected_callback(&mut self) {
-        log::info!("frame connected..");
         self.program.mount();
 
         let static_style = <Frame<()> as Application<Msg<()>>>::stylesheet().join("");
@@ -701,27 +699,28 @@ impl FrameCustomElement {
             <Frame<()> as Application<Msg<()>>>::style(&self.program.app()).join("");
         self.program.inject_style_to_mount(&dynamic_style);
 
-        log::info!("adding children to frame..");
         let children: Vec<web_sys::Node> = self.children.clone();
         self.program
             .app_mut()
             .container_mounted_listener(move |me| {
-                Self::append_children_to_shadow_mount(me.target_node, &children);
+                let container_node = &me.target_node;
+                for child in children.iter() {
+                    container_node
+                        .append_child(child)
+                        .expect("must append child..");
+                }
             });
-    }
-    fn append_children_to_shadow_mount(target_node: web_sys::Node, children: &[web_sys::Node]) {
-        for child in children.iter() {
-            target_node
-                .append_child(child)
-                .expect("must append child..");
-        }
     }
 
     #[wasm_bindgen(method, js_name = disconnectedCallback)]
-    pub fn disconnected_callback(&mut self) {}
+    pub fn disconnected_callback(&mut self) {
+        self.program.app_mut().disconnected_callback()
+    }
 
     #[wasm_bindgen(method, js_name = adoptedCallback)]
-    pub fn adopted_callback(&mut self) {}
+    pub fn adopted_callback(&mut self) {
+        self.program.app_mut().adopted_callback()
+    }
 
     #[wasm_bindgen(method, js_name = appendChild)]
     pub fn append_child(&mut self, child: JsValue) {
@@ -729,7 +728,6 @@ impl FrameCustomElement {
 
         let child_node: web_sys::Node = child.unchecked_into();
         let html_child: &web_sys::HtmlElement = child_node.unchecked_ref();
-        log::info!("appending child...: {:?}", html_child);
         self.children.push(child_node);
     }
 
